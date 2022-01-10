@@ -1110,7 +1110,7 @@ void Visualizer::Draw2Dand3D_all_info_single_camera(
     // compute 8 vetices in camera coodinates
     Eigen::Vector3d pos;
 
-    ADEBUG << "object->track_id: " << object->track_id;
+    AINFO << "object->track_id: " << object->track_id;
     // Draw 3D position using homography or direct distance from CNN
     double theta_ray;
     double theta;
@@ -1120,34 +1120,34 @@ void Visualizer::Draw2Dand3D_all_info_single_camera(
       pos << object->camera_supplement.local_center(0),
           object->camera_supplement.local_center(1),
           object->camera_supplement.local_center(2);
-      ADEBUG << "Camera pos: (" << pos(0) << ", " << pos(1) << ", " << pos(2)
+      AINFO << "Camera pos: (" << pos(0) << ", " << pos(1) << ", " << pos(2)
              << ")";
       theta_ray = atan2(pos(0), pos(2));
       theta = object->camera_supplement.alpha + theta_ray;
       // compute obstacle center in lidar ground
       c_2D.x = static_cast<int>(rect.x + rect.width / 2);
       c_2D.y = static_cast<int>(rect.y + rect.height);
-      ADEBUG << "Image Footprint c_2D: (" << c_2D.x << ", " << c_2D.y << ")";
+      AINFO << "Image Footprint c_2D: (" << c_2D.x << ", " << c_2D.y << ")";
       c_2D_l = image2ground(camera_name, c_2D);
-      ADEBUG << "Image Footprint position: (" << c_2D_l(0) << ", " << c_2D_l(1)
+      AINFO << "Image Footprint position: (" << c_2D_l(0) << ", " << c_2D_l(1)
              << ")";
     } else {
       pos = world2camera * object->center;
       theta_ray = atan2(pos(0), pos(2));
       theta = object->camera_supplement.alpha + theta_ray;
-      ADEBUG << "Direct pos: (" << pos(0) << ", " << pos(1) << ", " << pos(2)
+      AINFO << "Direct pos: (" << pos(0) << ", " << pos(1) << ", " << pos(2)
              << ")";
 
       // compute obstacle center in lidar ground
       c_2D_l(0) = pos(2);
       c_2D_l(1) = -pos(0);
-      ADEBUG << "Direct center position: (" << c_2D_l(0) << ", " << c_2D_l(1)
+      AINFO << "Direct center position: (" << c_2D_l(0) << ", " << c_2D_l(1)
              << ")";
     }
-    ADEBUG << "theta_ray: " << theta_ray * 180 / M_PI << " degree";
-    ADEBUG << "object->camera_supplement.alpha: "
+    AINFO << "theta_ray: " << theta_ray * 180 / M_PI << " degree";
+    AINFO << "object->camera_supplement.alpha: "
            << object->camera_supplement.alpha * 180 / M_PI << " degree";
-    ADEBUG << "theta: " << theta * 180 / M_PI << " = "
+    AINFO << "theta: " << theta * 180 / M_PI << " = "
            << object->camera_supplement.alpha * 180 / M_PI << " + "
            << theta_ray * 180 / M_PI;
 
@@ -1355,6 +1355,9 @@ void Visualizer::Draw2Dand3D_all_info_single_camera(
       p_prev_ground = p_cur_ground;
     }
   }
+  cv::namedWindow("object show", 0);
+  cv::imshow("object show", image_2D);
+  cv::waitKey(5);
 
   last_timestamp_ = frame.timestamp;
   camera_image_[frame.data_provider->sensor_name()] = image_2D;
@@ -1366,8 +1369,10 @@ void Visualizer::ShowResult_all_info_single_camera(
     const cv::Mat &img, const CameraFrame &frame,
     const base::MotionBufferPtr motion_buffer,
     const Eigen::Affine3d &world2camera) {
+  AINFO << "0:Enter into the ShowResult_all_info_single_camera: " << frame.pred_vpt.size();
+  AINFO << "frame.timestamp: " << frame.timestamp << " last_timestamp_: " << last_timestamp_;
   if (frame.timestamp - last_timestamp_ < 0.02) return;
-
+  AINFO << "1:Enter into the ShowResult_all_info_single_camera";
   world_image_ = cv::Mat(world_h_, wide_pixel_, CV_8UC3, black_color);
   if (frame.data_provider->sensor_name() == "front_6mm") {
     cv::imwrite("./test.png", img);
@@ -1376,6 +1381,8 @@ void Visualizer::ShowResult_all_info_single_camera(
   int line_pos = 0;
   cv::Mat image = img.clone();
   std::string camera_name = frame.data_provider->sensor_name();
+  AINFO << "manual_calibration_mode_: " << manual_calibration_mode_
+        << "  frame.pred_vpt.size() ," << frame.pred_vpt.size();
   if (manual_calibration_mode_) {
     line_pos += 50;
     cv::putText(image,
@@ -1438,6 +1445,7 @@ void Visualizer::ShowResult_all_info_single_camera(
         camera_name, image, frame,
         intrinsic_map_.at(camera_name).cast<double>(),
         extrinsic_map_.at(camera_name), world2camera, motion_buffer);
+        AINFO << "3:Enter into the ShowResult_all_info_single_camera";
   } else {
     AERROR << "Failed to find necessuary intrinsic or extrinsic params.";
   }

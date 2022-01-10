@@ -35,8 +35,8 @@ namespace apollo {
 namespace perception {
 namespace onboard {
 
-using apollo::cyber::common::GetAbsolutePath;
 using ::apollo::cyber::Clock;
+using apollo::cyber::common::GetAbsolutePath;
 
 static void fill_lane_msg(const base::LaneLineCubicCurve &curve_coord,
                           apollo::perception::LaneMarker *lane_marker) {
@@ -68,14 +68,12 @@ static int GetGpuId(const camera::CameraPerceptionInitOptions &options) {
 bool SetCameraHeight(const std::string &sensor_name,
                      const std::string &params_dir,
                      const std::string &lidar_sensor_name,
-                     float default_camera_height,
-                     float *camera_height) {
+                     float default_camera_height, float *camera_height) {
   float base_h = default_camera_height;
   float camera_offset = 0.0f;
   try {
     YAML::Node lidar_height =
-        YAML::LoadFile(
-          params_dir + "/" + lidar_sensor_name + "_height.yaml");
+        YAML::LoadFile(params_dir + "/" + lidar_sensor_name + "_height.yaml");
     base_h = lidar_height["vehicle"]["parameters"]["height"].as<float>();
     AINFO << base_h;
     YAML::Node camera_ex =
@@ -259,7 +257,7 @@ bool FusionCameraDetectionComponent::Init() {
       visualize_.SetDirectory(visual_debug_folder_);
     }
   }
-
+  cv::namedWindow("object_show", 0);
   return true;
 }
 
@@ -555,8 +553,7 @@ int FusionCameraDetectionComponent::InitCameraFrames() {
   for (const auto &camera_name : camera_names_) {
     float height = 0.0f;
     SetCameraHeight(camera_name, FLAGS_obs_sensor_intrinsic_path,
-                    FLAGS_lidar_sensor_name, default_camera_height_,
-                    &height);
+                    FLAGS_lidar_sensor_name, default_camera_height_, &height);
     camera_height_map_[camera_name] = height;
   }
 
@@ -813,6 +810,47 @@ int FusionCameraDetectionComponent::InternalProc(
     camera_frame.data_provider->GetImage(image_options, &out_image);
     memcpy(output_image.data, out_image.cpu_data(),
            out_image.total() * sizeof(uint8_t));
+    // new
+    if (camera_frame.data_provider->sensor_name() == "front_6mm") {
+      const std::vector<base::ObjectPtr> &objects =
+          camera_frame.tracked_objects;
+      for (const auto &obj : objects) {
+        // cv::circle(output_image,
+        // cv::Point(obj->camera_supplement.box.xmin,obj->camera_supplement.box.ymin),
+        //  30, cv::Scalar(0,255,0));
+        cv::rectangle(output_image,
+                      cv::Point(obj->camera_supplement.box.xmin,
+                                obj->camera_supplement.box.ymin),
+                      cv::Point(obj->camera_supplement.box.xmax,
+                                obj->camera_supplement.box.ymax),
+                      cv::Scalar(0, 255, 0));
+        std::string label_type = " ";
+        switch (obj->type) {
+          case base::ObjectType::UNKNOWN:
+            label_type = "UNKN";
+          case base::ObjectType::UNKNOWN_MOVABLE:
+            label_type = "U_MO";
+          case base::ObjectType::UNKNOWN_UNMOVABLE:
+            label_type = "UNMO";
+          case base::ObjectType::PEDESTRIAN:
+            label_type = "PED";
+          case base::ObjectType::BICYCLE:
+            label_type = "CYC";
+          case base::ObjectType::VEHICLE:
+            label_type = "VEH";
+          default:
+            break;
+        }
+        cv::putText(
+            output_image, label_type,
+            cv::Point(static_cast<int>(obj->camera_supplement.box.xmin),
+                      static_cast<int>(obj->camera_supplement.box.ymin) - 20),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0), 1);
+      }
+      cv::imshow("object_show", output_image);
+      cv::waitKey(30);
+    }
+
     visualize_.ShowResult_all_info_single_camera(output_image, camera_frame,
                                                  motion_buffer_, world2camera);
   }

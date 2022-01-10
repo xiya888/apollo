@@ -187,20 +187,25 @@ bool TransformWrapper::GetSensor2worldTrans(
   trans_novatel2world.timestamp = timestamp;
   Eigen::Affine3d novatel2world;
 
-  if (!QueryTrans(timestamp, &trans_novatel2world, novatel2world_tf2_frame_id_,
-                  novatel2world_tf2_child_frame_id_)) {
-    if (FLAGS_obs_enable_local_pose_extrapolation) {
-      if (!transform_cache_.QueryTransform(
-              timestamp, &trans_novatel2world,
-              FLAGS_obs_max_local_pose_extrapolation_latency)) {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  } else if (FLAGS_obs_enable_local_pose_extrapolation) {
-    transform_cache_.AddTransform(trans_novatel2world);
-  }
+  // First shield this piece of coordinate conversion from novatel to world,
+  // because the channel module of tf_static is not recorded together with other
+  // data, and the timestamps are very different. 20210106
+
+  // if (!QueryTrans(timestamp, &trans_novatel2world,
+  // novatel2world_tf2_frame_id_,
+  //                 novatel2world_tf2_child_frame_id_)) {
+  //   if (FLAGS_obs_enable_local_pose_extrapolation) {
+  //     if (!transform_cache_.QueryTransform(
+  //             timestamp, &trans_novatel2world,
+  //             FLAGS_obs_max_local_pose_extrapolation_latency)) {
+  //       return false;
+  //     }
+  //   } else {
+  //     return false;
+  //   }
+  // } else if (FLAGS_obs_enable_local_pose_extrapolation) {
+  //   transform_cache_.AddTransform(trans_novatel2world);
+  // }
 
   novatel2world =
       trans_novatel2world.translation * trans_novatel2world.rotation;
@@ -258,6 +263,7 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
         tf2_buffer_->lookupTransform(frame_id, child_frame_id,
                                      apollo::cyber::Time(0));
     double latest_buffer_time = latest_transform.header().timestamp_sec();
+    AERROR << "latest_buffer_time: " << latest_buffer_time;
     if ((target_time - latest_buffer_time < 0.015) &&
         (target_time - latest_buffer_time > 0)) {
       // query_time = apollo::cyber::Time(0);
@@ -286,6 +292,20 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
                            stamped_transform.transform().rotation().qx(),
                            stamped_transform.transform().rotation().qy(),
                            stamped_transform.transform().rotation().qz());
+    AINFO << "stamped_transform.transform().translation().x(): "
+          << stamped_transform.transform().translation().x()
+          << "  ,stamped_transform.transform().translation().y(): "
+          << stamped_transform.transform().translation().y()
+          << "  ,stamped_transform.transform().translation().z(): "
+          << stamped_transform.transform().translation().z();
+    AINFO << "stamped_transform.transform().rotation().qw(): "
+          << stamped_transform.transform().rotation().qw()
+          << "  ,stamped_transform.transform().rotation().qx(): "
+          << stamped_transform.transform().rotation().qx()
+          << "  ,stamped_transform.transform().rotation().qy(): "
+          << stamped_transform.transform().rotation().qy()
+          << "  ,stamped_transform.transform().rotation().qz()"
+          << stamped_transform.transform().rotation().qz();
   } catch (tf2::TransformException& ex) {
     AERROR << ex.what();
     return false;

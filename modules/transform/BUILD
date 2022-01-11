@@ -49,6 +49,7 @@ cc_library(
         "//modules/transform/proto:static_transform_conf_cc_proto",
         "//modules/transform/proto:transform_cc_proto",
         "@com_github_jbeder_yaml_cpp//:yaml-cpp",
+        "//modules/localization/common:localization_common",
     ],
 )
 

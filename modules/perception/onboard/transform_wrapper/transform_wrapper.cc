@@ -189,10 +189,11 @@ bool TransformWrapper::GetSensor2worldTrans(
 
   // First shield this piece of coordinate conversion from novatel to world,
   // because the channel module of tf_static is not recorded together with other
-  // data, and the timestamps are very different. 20210106
-
-  // if (!QueryTrans(timestamp, &trans_novatel2world,
-  // novatel2world_tf2_frame_id_,
+  // data, and the timestamps are very different. 20210106, maybe wrong.
+  // AINFO << "novatel2world_tf2_frame_id_: " << novatel2world_tf2_frame_id_
+  //       << "  ,novatel2world_tf2_child_frame_id_: "
+  //       << novatel2world_tf2_child_frame_id_;
+  // if (!QueryTrans(timestamp, &trans_novatel2world, novatel2world_tf2_frame_id_,
   //                 novatel2world_tf2_child_frame_id_)) {
   //   if (FLAGS_obs_enable_local_pose_extrapolation) {
   //     if (!transform_cache_.QueryTransform(
@@ -263,7 +264,9 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
         tf2_buffer_->lookupTransform(frame_id, child_frame_id,
                                      apollo::cyber::Time(0));
     double latest_buffer_time = latest_transform.header().timestamp_sec();
-    AERROR << "latest_buffer_time: " << latest_buffer_time;
+    AERROR << std::fixed << std::setprecision(16)
+           << "latest_buffer_time: " << latest_buffer_time
+           << "target_time: " << target_time;
     if ((target_time - latest_buffer_time < 0.015) &&
         (target_time - latest_buffer_time > 0)) {
       // query_time = apollo::cyber::Time(0);

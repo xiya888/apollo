@@ -202,6 +202,7 @@ bool Buffer::canTransform(const std::string& target_frame,
     errstr->clear();
     bool retval = tf2::BufferCore::canTransform(target_frame, source_frame,
                                                 time.ToNanosecond(), errstr);
+    AINFO << "retval: " << retval;
     if (retval) {
       return true;
     } else {

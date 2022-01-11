@@ -34,42 +34,8 @@ bool StaticTransformComponent::Init() {
   attr.mutable_qos_profile()->CopyFrom(
       cyber::transport::QosProfileConf::QOS_PROFILE_TF_STATIC);
   writer_ = node_->CreateWriter<TransformStampeds>(attr);
-  localization_reader_ =
-      node_->CreateReader<apollo::localization::LocalizationEstimate>(
-          FLAGS_localization_topic,
-          [this](
-              const std::shared_ptr<apollo::localization::LocalizationEstimate>&
-                  localization) { LocalizationInfo(localization); });
-  // SendTransforms();
+  SendTransforms();
   return true;
-}
-
-void StaticTransformComponent::LocalizationInfo(
-    const std::shared_ptr<apollo::localization::LocalizationEstimate>&
-        localization) {
-  location_timestamp_ = localization->header().timestamp_sec();
-  // AERROR << "location_timestamp_1: " << std::fixed << std::setprecision(20)
-  //       << location_timestamp_;
-  send_message_number_++;
-  if (send_message_number_ == 1) {
-    SendTransforms();
-  } else if (send_message_number_ == 300) {
-    send_message_number_ = 0;
-  }
-}
-
-void StaticTransformComponent::NewFillHeader(const std::string& module_name,
-                                             TransformStampeds* msg) {
-  static std::atomic<uint64_t> sequence_num = {0};
-  // double timestamp = ::apollo::cyber::Clock::NowInSeconds();
-  // AERROR << std::fixed << std::setprecision(20)
-  //        << "location_timestamp_2: " << location_timestamp_
-  //        << "real_timestamp2: " << timestamp;
-  auto* header = msg->mutable_header();
-  header->set_module_name(module_name);
-  header->set_timestamp_sec(location_timestamp_);
-  header->set_sequence_num(
-      static_cast<unsigned int>(sequence_num.fetch_add(1)));
 }
 
 void StaticTransformComponent::SendTransforms() {
@@ -135,8 +101,7 @@ void StaticTransformComponent::SendTransform(
     }
   }
 
-  // common::util::FillHeader(node_->Name(), &transform_stampeds_);
-  NewFillHeader(node_->Name(), &transform_stampeds_);
+  common::util::FillHeader(node_->Name(), &transform_stampeds_);
   writer_->Write(transform_stampeds_);
 }
 

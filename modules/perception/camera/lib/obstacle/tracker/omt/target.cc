@@ -42,6 +42,7 @@ TrackObjectPtr Target::get_object(int index) const {
 }
 void Target::Add(TrackObjectPtr object) {
   if (tracked_objects.empty()) {
+    AINFO << "tracked_objects.empty()";
     start_ts = object->timestamp;
     id = Target::global_track_id++;
     type = object->object->sub_type;
@@ -52,15 +53,23 @@ void Target::Add(TrackObjectPtr object) {
   latest_object = object;
   lost_age = 0;
   tracked_objects.push_back(object);
+  AINFO << "Add. tracked_objects.size(): " << tracked_objects.size() << " ,id: "
+        << id << " , lost_age: " << lost_age;
 }
 void Target::RemoveOld(int frame_id) {
+  AINFO << "frame_id: " << frame_id;
   size_t index = 0;
   while (index < tracked_objects.size() &&
          tracked_objects[index]->indicator.frame_id < frame_id) {
+    AINFO << "tracked_objects.size(): " << tracked_objects.size() << 
+          ", tracked_objects[index]->indicator.frame_id" << 
+          tracked_objects[index]->indicator.frame_id;
     ++index;
   }
   tracked_objects.erase(tracked_objects.begin(),
                         tracked_objects.begin() + index);
+  AINFO << "tracked_objects size: " << tracked_objects.size()
+        << " , tracked_objects empty: " << tracked_objects.empty();
 }
 void Target::Init(const omt::TargetParam &param) {
   target_param_ = param;
@@ -135,6 +144,7 @@ void Target::Update2D(CameraFrame *frame) {
   base::RectF rect(latest_object->projected_box);
   base::Point2DF center = rect.Center();
 
+  AINFO << "isLost(): " << isLost();
   if (!isLost()) {
     Eigen::Vector2d measurement;
     measurement << rect.width, rect.height;
@@ -147,7 +157,7 @@ void Target::Update2D(CameraFrame *frame) {
     state = image_center.get_state();
     center.x = static_cast<float>(state(0));
     center.y = static_cast<float>(state(1));
-    ADEBUG << "2d move:" << id << " " << state(2) << " " << state(3);
+    AINFO << "2d move:" << id << " " << state(2) << " " << state(3);
 
     auto shape = image_wh.get_state();
     rect.width = static_cast<float>(shape(0));
@@ -186,7 +196,7 @@ void Target::Update3D(CameraFrame *frame) {
       world_center.measure_noise_.setIdentity();
       world_center.measure_noise_ *= dis_err;
       world_center.Correct(z);
-      ADEBUG << "Velocity: " << id << " " << z.transpose() << " "
+      AINFO << "Velocity: " << id << " " << z.transpose() << " "
              << world_center.get_state().transpose();
 
       // const position kalman correct
@@ -220,18 +230,18 @@ void Target::Update3D(CameraFrame *frame) {
       double speed1 = std::sqrt(vel(0) * vel(0) + vel(1) * vel(1));
       double speed2 = std::sqrt(x(2) * x(2) + x(3) * x(3));
       double ratio = (Equal(speed1, 0)) ? 0 : speed2 / speed1;
-      ADEBUG << "Target: " << id << " " << vel.transpose() << " , "
+      AINFO << "Target: " << id << " " << vel.transpose() << " , "
              << x.block<2, 1>(2, 0).transpose();
       if (ratio > target_param_.too_large_velocity_ratio()) {
         world_center.MagicVelocity(vel);
-        ADEBUG << "Velocity too large";
+        AINFO << "Velocity too large";
       } else if (ratio > target_param_.large_velocity_ratio()) {
         vel(0) = (x(2) + vel(0)) / 2;
         vel(1) = (x(3) + vel(1)) / 2;
         world_center.MagicVelocity(vel);
-        ADEBUG << "Velocity large";
+        AINFO << "Velocity large";
       } else {
-        ADEBUG << "Velocity normal";
+        AINFO << "Velocity normal";
       }
     }
 
@@ -302,11 +312,12 @@ void Target::Update3D(CameraFrame *frame) {
   }
 
   // debug velocity
-  ADEBUG << "obj_speed--id: " << id << " " << object->velocity.head(2).norm();
+  AINFO << "obj_speed--id: " << id << " " << object->velocity.head(2).norm();
 }
 
 void Target::UpdateType(CameraFrame *frame) {
   auto object = latest_object->object;
+  AINFO << "UpdateType__isLost(): " << isLost();
   if (!isLost()) {
     base::RectF rect(object->camera_supplement.box);
     // 1.  6mm: reliable z is 40. intrinsic is approximate 2000
@@ -324,7 +335,7 @@ void Target::UpdateType(CameraFrame *frame) {
     auto max_prob = std::max_element(type_probs.begin(), type_probs.end());
     auto index = static_cast<int>(std::distance(type_probs.begin(), max_prob));
     type = static_cast<base::ObjectSubType>(index);
-    ADEBUG << "Target " << id << " change type from "
+    AINFO << "Target " << id << " change type from "
            << static_cast<int>(object->sub_type) << " to "
            << static_cast<int>(type);
     object->sub_type = type;
@@ -341,7 +352,7 @@ void Target::UpdateType(CameraFrame *frame) {
     } else {
       object->size = world_lwh.get_state().block<3, 1>(1, 0).cast<float>();
     }
-    ADEBUG << " size is " << world_lwh.get_state().transpose();
+    AINFO << " size is " << world_lwh.get_state().transpose();
   }
 }
 

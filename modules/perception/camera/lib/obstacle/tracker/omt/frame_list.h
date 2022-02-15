@@ -118,6 +118,7 @@ class FrameList {
   }
 
   inline int OldestFrameId() {
+    AINFO << "frame_count_: " << frame_count_;
     if (frame_count_ < capability_) {
       return 0;
     } else {
@@ -135,6 +136,7 @@ class FrameList {
 
   inline void Add(CameraFrame *frame) {
     frames_[frame_count_ % capability_] = frame;
+    AINFO << "Add id : " <<  frames_[frame_count_ % capability_]->frame_id;
     ++frame_count_;
   }
 

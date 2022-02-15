@@ -203,6 +203,7 @@ void FillObjectPolygonFromBBox3D(base::Object *object_ptr) {
   object_ptr->polygon[3].y =
       y1 * cos_theta - x2 * sin_theta + object_ptr->center[1];
   object_ptr->polygon[3].z = 0.0;
+  AINFO << "FillObjectPolygonFromBBox3D!";
 }
 
 }  // namespace camera

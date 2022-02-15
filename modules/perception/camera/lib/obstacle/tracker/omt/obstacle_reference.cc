@@ -150,11 +150,16 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
 
   for (auto &obj : frame->detected_objects) {
     float volume_object = obj->size[0] * obj->size[1] * obj->size[2];
-    ADEBUG << "Det " << frame->frame_id << " (" << obj->id << ") "
+    AINFO << "Det " << frame->frame_id << " (" << obj->id << ") "
            << "ori size:" << obj->size.transpose() << " "
            << "type: " << static_cast<int>(obj->sub_type) << " "
            << volume_object << " " << frame->data_provider->sensor_name();
     base::CameraObjectSupplement &supplement = obj->camera_supplement;
+    AINFO << "Contain(object_template_manager_->TypeRefinedByTemplate(), obj->"
+      "sub_type): " << Contain(object_template_manager_->TypeRefinedByTemplate(),
+      obj->sub_type) << "Contain(object_template_manager_->TypeRefinedByRef(), "
+      "obj->sub_type): " << Contain(object_template_manager_->TypeRefinedByRef(),
+      obj->sub_type);
 
     if (Contain(object_template_manager_->TypeRefinedByTemplate(),
                 obj->sub_type)) {
@@ -274,7 +279,7 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
       obj->size[1] = tmplt[1] * scale_factor;
       obj->size[0] = tmplt[2] * scale_factor;
     }
-    ADEBUG << "correct size:" << obj->size.transpose();
+    AINFO << "correct size:" << obj->size.transpose();
   }
 }
 }  // namespace camera

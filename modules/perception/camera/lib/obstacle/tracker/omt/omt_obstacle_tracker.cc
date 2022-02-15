@@ -119,7 +119,7 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
           }
         }
       }
-      ADEBUG << "Overlap: (" << targets_[i].id << "," << targets_[j].id
+      AINFO << "Overlap: (" << targets_[i].id << "," << targets_[j].id
              << ") score " << score << " count " << count;
       hypo.target = static_cast<int>(i);
       hypo.object = static_cast<int>(j);
@@ -134,6 +134,7 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
   std::vector<bool> used_target(targets_.size(), false);
   for (auto &pair : score_list) {
     if (used_target[pair.target] || used_target[pair.object]) {
+      AINFO << "score_list2?";
       continue;
     }
     int index1 = pair.target;
@@ -161,14 +162,17 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
     used_target[pair.object] = true;
     used_target[pair.target] = true;
   }
+  AINFO << "CombineDuplicateTargets over.";
   return true;
 }
 
 void OMTObstacleTracker::GenerateHypothesis(const TrackObjectPtrs &objects) {
   std::vector<Hypothesis> score_list;
   Hypothesis hypo;
+  AINFO << "0_targets_: " << targets_.size() << "  ,objects.size(): " << 
+        objects.size();
   for (size_t i = 0; i < targets_.size(); ++i) {
-    ADEBUG << "Target " << targets_[i].id;
+    AINFO << "Target " << targets_[i].id;
     for (size_t j = 0; j < objects.size(); ++j) {
       hypo.target = static_cast<int>(i);
       hypo.object = static_cast<int>(j);
@@ -189,9 +193,11 @@ void OMTObstacleTracker::GenerateHypothesis(const TrackObjectPtrs &objects) {
       int change_from_type = static_cast<int>(targets_[i].type);
       int change_to_type = static_cast<int>(objects[j]->object->sub_type);
       hypo.score += -kTypeAssociatedCost_[change_from_type][change_to_type];
-      ADEBUG << "Detection " << objects[j]->indicator.frame_id << "(" << j
+
+      AINFO << "Detection " << objects[j]->indicator.frame_id << "(" << j
              << ") sa:" << sa << " sm: " << sm << " ss: " << ss << " so: " << so
-             << " score: " << hypo.score;
+             << " score: " << hypo.score << " ,hypo.target: " << hypo.target
+             << " ,hypo.object: " << hypo.object; 
 
       // 95.44% area is range [mu - sigma*2, mu + sigma*2]
       // don't match if motion is beyond the range
@@ -201,6 +207,7 @@ void OMTObstacleTracker::GenerateHypothesis(const TrackObjectPtrs &objects) {
       score_list.push_back(hypo);
     }
   }
+  AINFO << "Enter into the target match flow. ";
 
   sort(score_list.begin(), score_list.end(), std::greater<Hypothesis>());
   std::vector<bool> used_target(targets_.size(), false);
@@ -299,10 +306,12 @@ bool OMTObstacleTracker::Predict(const ObstacleTrackerOptions &options,
     auto obj = target.latest_object;
     frame->proposed_objects.push_back(obj->object);
   }
+  AINFO << "Enter Predict.";
   return true;
 }
 
 int OMTObstacleTracker::CreateNewTarget(const TrackObjectPtrs &objects) {
+  AINFO << "Enter the CreateNewTarget.";
   const TemplateMap &kMinTemplateHWL =
       object_template_manager_->MinTemplateHWL();
   std::vector<base::RectF> target_rects;
@@ -310,11 +319,13 @@ int OMTObstacleTracker::CreateNewTarget(const TrackObjectPtrs &objects) {
     if (!target.isTracked() || target.isLost()) {
       continue;
     }
+    // target[-1] is the lasted target in targets_??
     base::RectF target_rect(target[-1]->object->camera_supplement.box);
     target_rects.push_back(target_rect);
   }
   int created_count = 0;
   for (size_t i = 0; i < objects.size(); ++i) {
+    AINFO << "used_[i]: " << used_[i];
     if (!used_[i]) {
       bool is_covered = false;
       const auto &sub_type = objects[i]->object->sub_type;
@@ -340,6 +351,7 @@ int OMTObstacleTracker::CreateNewTarget(const TrackObjectPtrs &objects) {
       if (is_covered) {
         continue;
       }
+      AINFO << "rect.height: " << rect.height;
       if (min_tmplt.empty()  // unknown type
           || rect.height > min_tmplt[0] * omt_param_.min_init_height_ratio()) {
         Target target(omt_param_.target_param());
@@ -358,9 +370,11 @@ bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
                                      CameraFrame *frame) {
   inference::CudaUtil::set_device_id(gpu_id_);
   frame_list_.Add(frame);
+  AINFO << "frame_list_.Size(): " << frame_list_.Size();
   for (int t = 0; t < frame_list_.Size(); t++) {
     int frame1 = frame_list_[t]->frame_id;
-    int frame2 = frame_list_[-1]->frame_id;
+    int frame2 = frame_list_[-1]->frame_id; //[-1] is the latested one.
+    AINFO << "frame1: " << frame1 << " ,frame2: " << frame2;
     similar_->Calc(frame_list_[frame1], frame_list_[frame2],
                    similar_map_.get(frame1, frame2).get());
   }
@@ -368,6 +382,8 @@ bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
   for (auto &target : targets_) {
     target.RemoveOld(frame_list_.OldestFrameId());
     ++target.lost_age;
+    AINFO << "Associate2D target.lost_age: " << target.lost_age
+          << " ,frame_list_.OldestFrameId(): " << frame_list_.OldestFrameId();
   }
 
   TrackObjectPtrs track_objects;
@@ -394,8 +410,9 @@ bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
 
   for (auto &target : targets_) {
     if (target.lost_age > omt_param_.reserve_age()) {
-      AINFO << "Target " << target.id << " is lost";
-      target.Clear();
+      AINFO << "Target " << target.id << " is lost" << ", target.lost_age: " 
+            << target.lost_age;
+      target.Clear(); //this is real clear the target.
     } else {
       target.UpdateType(frame);
       target.Update2D(frame);
@@ -422,6 +439,7 @@ void OMTObstacleTracker::ClearTargets() {
   int left = 0;
   int end = static_cast<int>(targets_.size() - 1);
   while (left <= end) {
+    AINFO << "targets_[left].Size(): " << targets_[left].Size();
     if ((targets_[left].Size() == 0)) {
       while ((left < end) && (targets_[end].Size() == 0)) {
         --end;
@@ -434,7 +452,15 @@ void OMTObstacleTracker::ClearTargets() {
     }
     ++left;
   }
+  AINFO << "left: " << left << "  ,end: " << end;
+  AINFO << "targets_.begin(): " << targets_.begin()
+        << " , targets_.end(): " << targets_.end();
   targets_.erase(targets_.begin() + left, targets_.end());
+  for (auto &target : targets_) {
+    AINFO << "Target2 " << target.id << " is lost" << ", target.lost_age: " 
+            << target.lost_age;
+  }
+  AINFO << "ClearTargets.";
 }
 
 bool OMTObstacleTracker::Associate3D(const ObstacleTrackerOptions &options,
@@ -445,6 +471,8 @@ bool OMTObstacleTracker::Associate3D(const ObstacleTrackerOptions &options,
   // mismatch may lead to an abnormal movement
   // if an abnormal movement is found, remove old target and create new one
   for (auto &target : targets_) {
+    AINFO << "target.Size(): " << target.Size()
+          << " ,target.isLost(): " << target.isLost();
     if (target.isLost() || target.Size() == 1) {
       continue;
     }
@@ -466,7 +494,7 @@ bool OMTObstacleTracker::Associate3D(const ObstacleTrackerOptions &options,
   used_.clear();
   used_.resize(track_objects.size(), false);
   int new_count = CreateNewTarget(track_objects);
-  AINFO << "Create " << new_count << " new target";
+  AINFO << "Associate3D Create " << new_count << " new target";
   for (int j = 0; j < new_count; ++j) {
     targets_[targets_.size() - j - 1].Update2D(frame);
     targets_[targets_.size() - j - 1].UpdateType(frame);
@@ -475,7 +503,7 @@ bool OMTObstacleTracker::Associate3D(const ObstacleTrackerOptions &options,
     target.Update3D(frame);
     if (!target.isLost()) {
       frame->tracked_objects.push_back(target[-1]->object);
-      ADEBUG << "Target " << target.id
+      AINFO << "Target " << target.id
              << " velocity: " << target.world_center.get_state().transpose()
              << " % " << target.world_center.variance_.diagonal().transpose()
              << " % " << target[-1]->object->velocity.transpose();

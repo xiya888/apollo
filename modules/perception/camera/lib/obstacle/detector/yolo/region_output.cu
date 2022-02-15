@@ -530,6 +530,7 @@ int get_objects_gpu(const YoloBlobs &yolo_blobs, const cudaStream_t &stream,
 
   int top_k = idx_sm->count();
   int num_kept = 0;
+  AINFO << "num_classes: " << num_classes;
   // inter-cls NMS
   apply_nms_gpu(
       res_box_data, cpu_cls_data + num_classes * all_scales_num_candidates,

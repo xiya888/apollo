@@ -266,7 +266,7 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
     double latest_buffer_time = latest_transform.header().timestamp_sec();
     AERROR << std::fixed << std::setprecision(16)
            << "latest_buffer_time: " << latest_buffer_time
-           << "target_time: " << target_time;
+           << " ,target_time: " << target_time;
     if ((target_time - latest_buffer_time < 0.015) &&
         (target_time - latest_buffer_time > 0)) {
       // query_time = apollo::cyber::Time(0);

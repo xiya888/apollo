@@ -8,7 +8,8 @@ module_config {
             flag_file_path: "/apollo/modules/prediction/conf/prediction.conf"
             readers: [
                 {
-                    channel: "/apollo/perception/obstacles"
+                    #channel: "/apollo/perception/obstacles"
+                    channel: "/perception/fusion/obstacles"
                     qos_profile: {
                         depth : 1
                     }

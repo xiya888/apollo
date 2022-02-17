@@ -358,6 +358,8 @@ int FusionCameraDetectionComponent::InitConfig() {
     return cyber::FAIL;
   }
 
+  timestamp_offset_ = fusion_camera_detection_param.timestamp_offset();
+
   camera_perception_init_options_.root_dir =
       fusion_camera_detection_param.camera_obstacle_perception_conf_dir();
   camera_perception_init_options_.conf_file =
@@ -663,10 +665,13 @@ int FusionCameraDetectionComponent::InternalProc(
     const std::string &camera_name, apollo::common::ErrorCode *error_code,
     SensorFrameMessage *prefused_message,
     apollo::perception::PerceptionObstacles *out_message) {
-  // const double msg_timestamp =
-  //     in_message->measurement_time() + timestamp_offset_;
   const double msg_timestamp =
-      in_message->header().timestamp_sec() + timestamp_offset_;
+      in_message->measurement_time() + timestamp_offset_;
+  AERROR << std::fixed << std::setprecision(16) <<  "measurement_time: " 
+         << in_message->measurement_time() << " ,timestamp_offset_: " 
+         << timestamp_offset_ << " ,msg_timestamp: "<< msg_timestamp;
+  // const double msg_timestamp =
+  //     in_message->header().timestamp_sec() + timestamp_offset_;
   const int frame_size = static_cast<int>(camera_frames_.size());
   camera::CameraFrame &camera_frame = camera_frames_[frame_id_ % frame_size];
 

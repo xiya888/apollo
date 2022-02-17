@@ -135,8 +135,8 @@ void StaticTransformComponent::SendTransform(
     }
   }
 
-  // common::util::FillHeader(node_->Name(), &transform_stampeds_);
-  NewFillHeader(node_->Name(), &transform_stampeds_);
+  common::util::FillHeader(node_->Name(), &transform_stampeds_);
+  // NewFillHeader(node_->Name(), &transform_stampeds_);
   writer_->Write(transform_stampeds_);
 }
 

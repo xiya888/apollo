@@ -111,8 +111,8 @@ bool SegmentationComponent::InternalProc(
     std::unique_lock<std::mutex> lock(s_mutex_);
     s_seq_num_++;
   }
-//  const double timestamp = in_message->measurement_time();
-  const double timestamp = in_message->header().timestamp_sec();
+  const double timestamp = in_message->measurement_time();
+  // const double timestamp = in_message->header().timestamp_sec();
   const double cur_time = Clock::NowInSeconds();
   const double start_latency = (cur_time - timestamp) * 1e3;
   AINFO << std::setprecision(16) << "FRAME_STATISTICS:Lidar:Start:msg_time["

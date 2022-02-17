@@ -58,16 +58,23 @@ bool SegmentationComponent::Proc(
     const std::shared_ptr<drivers::PointCloud>& message) {
   AINFO << std::setprecision(16)
         << "Enter segmentation component, message timestamp: "
-        << message->measurement_time() << " current timestamp: "
-        << Clock::NowInSeconds();
+        << message->measurement_time()
+        << " current timestamp: " << Clock::NowInSeconds();
 
   std::shared_ptr<LidarFrameMessage> out_message(new (std::nothrow)
                                                      LidarFrameMessage);
 
   bool status = InternalProc(message, out_message);
   if (status) {
-    writer_->Write(out_message);
-    AINFO << "Send lidar segment output message.";
+    // out_message->lidar_frame_->timestamp =
+    //     (out_message->lidar_frame_->timestamp > DBL_EPSILON
+    //         ? out_message->lidar_frame_->timestamp
+    //         : message->mutable_header()->timestamp_sec());
+    writer_->Write(out_message);    
+    AERROR << "Send lidar segment output message."
+           << out_message->lidar_frame_->segmented_objects.size()
+           << ",,time=" << out_message->lidar_frame_->timestamp;
+    // AINFO << "Send lidar segment output message.";
   }
   return status;
 }
@@ -104,7 +111,8 @@ bool SegmentationComponent::InternalProc(
     std::unique_lock<std::mutex> lock(s_mutex_);
     s_seq_num_++;
   }
-  const double timestamp = in_message->measurement_time();
+//  const double timestamp = in_message->measurement_time();
+  const double timestamp = in_message->header().timestamp_sec();
   const double cur_time = Clock::NowInSeconds();
   const double start_latency = (cur_time - timestamp) * 1e3;
   AINFO << std::setprecision(16) << "FRAME_STATISTICS:Lidar:Start:msg_time["
@@ -112,7 +120,7 @@ bool SegmentationComponent::InternalProc(
         << "]:cur_latency[" << start_latency << "]";
 
   out_message->timestamp_ = timestamp;
-  out_message->lidar_timestamp_ = in_message->header().lidar_timestamp();
+  out_message->lidar_timestamp_ = in_message->header().lidar_timestamp(); // TO DO
   out_message->seq_num_ = s_seq_num_;
   out_message->process_stage_ = ProcessStage::LIDAR_SEGMENTATION;
   out_message->error_code_ = apollo::common::ErrorCode::OK;

@@ -56,7 +56,7 @@ bool RecognitionComponent::Proc(
 
   if (InternalProc(message, out_message)) {
     writer_->Write(out_message);
-    AINFO << "Send lidar recognition output message.";
+    AERROR << "Send lidar recognition output message.";
     return true;
   }
   return false;
@@ -115,6 +115,7 @@ bool RecognitionComponent::InternalProc(
   frame->sensor_info = lidar_frame->sensor_info;
   frame->timestamp = in_message->timestamp_;
   frame->objects = lidar_frame->tracked_objects;
+  AERROR << "frame->objects.size(): " << frame->objects.size();
   frame->sensor2world_pose = lidar_frame->lidar2world_pose;
   frame->lidar_frame_supplement.on_use = true;
   frame->lidar_frame_supplement.cloud_ptr = lidar_frame->cloud;

@@ -190,23 +190,23 @@ bool TransformWrapper::GetSensor2worldTrans(
   // First shield this piece of coordinate conversion from novatel to world,
   // because the channel module of tf_static is not recorded together with other
   // data, and the timestamps are very different. 20210106, maybe wrong.
-  // AINFO << "novatel2world_tf2_frame_id_: " << novatel2world_tf2_frame_id_
-  //       << "  ,novatel2world_tf2_child_frame_id_: "
-  //       << novatel2world_tf2_child_frame_id_;
-  // if (!QueryTrans(timestamp, &trans_novatel2world, novatel2world_tf2_frame_id_,
-  //                 novatel2world_tf2_child_frame_id_)) {
-  //   if (FLAGS_obs_enable_local_pose_extrapolation) {
-  //     if (!transform_cache_.QueryTransform(
-  //             timestamp, &trans_novatel2world,
-  //             FLAGS_obs_max_local_pose_extrapolation_latency)) {
-  //       return false;
-  //     }
-  //   } else {
-  //     return false;
-  //   }
-  // } else if (FLAGS_obs_enable_local_pose_extrapolation) {
-  //   transform_cache_.AddTransform(trans_novatel2world);
-  // }
+  AINFO << "novatel2world_tf2_frame_id_: " << novatel2world_tf2_frame_id_
+        << "  ,novatel2world_tf2_child_frame_id_: "
+        << novatel2world_tf2_child_frame_id_;
+  if (!QueryTrans(timestamp, &trans_novatel2world, novatel2world_tf2_frame_id_,
+                  novatel2world_tf2_child_frame_id_)) {
+    if (FLAGS_obs_enable_local_pose_extrapolation) {
+      if (!transform_cache_.QueryTransform(
+              timestamp, &trans_novatel2world,
+              FLAGS_obs_max_local_pose_extrapolation_latency)) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  } else if (FLAGS_obs_enable_local_pose_extrapolation) {
+    transform_cache_.AddTransform(trans_novatel2world);
+  }
 
   novatel2world =
       trans_novatel2world.translation * trans_novatel2world.rotation;

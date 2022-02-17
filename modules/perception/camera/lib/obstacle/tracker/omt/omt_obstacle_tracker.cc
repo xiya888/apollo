@@ -453,8 +453,6 @@ void OMTObstacleTracker::ClearTargets() {
     ++left;
   }
   AINFO << "left: " << left << "  ,end: " << end;
-  AINFO << "targets_.begin(): " << targets_.begin()
-        << " , targets_.end(): " << targets_.end();
   targets_.erase(targets_.begin() + left, targets_.end());
   for (auto &target : targets_) {
     AINFO << "Target2 " << target.id << " is lost" << ", target.lost_age: " 

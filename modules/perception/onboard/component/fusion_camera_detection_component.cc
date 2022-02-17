@@ -663,8 +663,10 @@ int FusionCameraDetectionComponent::InternalProc(
     const std::string &camera_name, apollo::common::ErrorCode *error_code,
     SensorFrameMessage *prefused_message,
     apollo::perception::PerceptionObstacles *out_message) {
+  // const double msg_timestamp =
+  //     in_message->measurement_time() + timestamp_offset_;
   const double msg_timestamp =
-      in_message->measurement_time() + timestamp_offset_;
+      in_message->header().timestamp_sec() + timestamp_offset_;
   const int frame_size = static_cast<int>(camera_frames_.size());
   camera::CameraFrame &camera_frame = camera_frames_[frame_id_ % frame_size];
 

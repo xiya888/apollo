@@ -570,6 +570,7 @@ geometry_msgs::TransformStamped BufferCore::lookupTransform(
     const std::string& target_frame, const std::string& source_frame,
     const Time& time) const {
   boost::mutex::scoped_lock lock(frame_mutex_);
+  std::cout << "time. " << time << std::endl;
 
   if (target_frame == source_frame) {
     geometry_msgs::TransformStamped identity;
@@ -586,7 +587,7 @@ geometry_msgs::TransformStamped BufferCore::lookupTransform(
         identity.header.stamp = time;
     } else
       identity.header.stamp = time;
-
+    std::cout << "identity. " << std::endl;
     return identity;
   }
 
@@ -596,10 +597,15 @@ geometry_msgs::TransformStamped BufferCore::lookupTransform(
   CompactFrameID source_id =
       validateFrameId("lookupTransform argument source_frame", source_frame);
 
+  std::cout << "lookupTransform target_id:  " << target_id << "source_id: " << source_id 
+            << std::endl;
+
   std::string error_string;
   TransformAccum accum;
   int retval =
       walkToTopParent(accum, time, target_id, source_id, &error_string);
+  std::cout << "retval. " << retval << std::endl;
+
   if (retval != tf2_msgs::TF2Error::NO_ERROR) {
     switch (retval) {
       case tf2_msgs::TF2Error::CONNECTIVITY_ERROR:
@@ -615,6 +621,7 @@ geometry_msgs::TransformStamped BufferCore::lookupTransform(
         // logError("Unknown error code: %d", retval);
         assert(0);
     }
+    std::cout << "22222 " << std::endl;
   }
 
   geometry_msgs::TransformStamped output_transform;
@@ -777,8 +784,10 @@ bool BufferCore::canTransformInternal(CompactFrameID target_id,
 bool BufferCore::canTransform(const std::string& target_frame,
                               const std::string& source_frame, const Time& time,
                               std::string* error_msg) const {
+  // std::cout << "canTransform A." << std::endl;
   // Short circuit if target_frame == source_frame
   if (target_frame == source_frame) return true;
+  // std::cout << "canTransform A1." << std::endl;
 
   if (warnFrameId("canTransform argument target_frame", target_frame))
     return false;
@@ -789,6 +798,8 @@ bool BufferCore::canTransform(const std::string& target_frame,
 
   CompactFrameID target_id = lookupFrameNumber(target_frame);
   CompactFrameID source_id = lookupFrameNumber(source_frame);
+  std::cout << "canTransform 0. " << " ,target_id: " << target_id
+            << " ,source_id: " << source_id << std::endl;
 
   if (target_id == 0 || source_id == 0) {
     if (error_msg) {
@@ -806,6 +817,7 @@ bool BufferCore::canTransform(const std::string& target_frame,
     }
     return false;
   }
+  std::cout << "canTransform 1." << std::endl;
   return canTransformNoLock(target_id, source_id, time, error_msg);
 }
 

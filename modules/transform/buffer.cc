@@ -206,11 +206,14 @@ bool Buffer::canTransform(const std::string& target_frame,
     if (retval) {
       return true;
     } else {
-      AWARN << "BufferCore::canTransform failed: " << *errstr;
+      // AWARN << "BufferCore::canTransform failed: " << *errstr;
+      AINFO << "BufferCore::canTransform failed: " << *errstr;
       std::this_thread::sleep_for(std::chrono::milliseconds(3));
     }
   }
+  // AINFO << "Buffer canTransform end.";
   *errstr = *errstr + ":timeout";
+  // AINFO << "Buffer canTransform end2.";
   return false;
 }
 

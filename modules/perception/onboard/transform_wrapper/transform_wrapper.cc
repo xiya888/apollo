@@ -257,9 +257,12 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
   double target_time = timestamp;
   bool look_up_flag = false;
   apollo::transform::TransformStamped stamped_transform;
+  AINFO << "QueryTrans 0_ frame_id: " << frame_id
+         << " child_frame_id: " << child_frame_id;
   if (!tf2_buffer_->canTransform(frame_id, child_frame_id, query_time,
                                  static_cast<float>(FLAGS_obs_tf2_buff_size),
                                  &err_string)) {
+    AERROR << " 0 Error info: " << err_string;
     apollo::transform::TransformStamped latest_transform =
         tf2_buffer_->lookupTransform(frame_id, child_frame_id,
                                      apollo::cyber::Time(0));
@@ -281,6 +284,7 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
       return false;
     }
   }
+  AINFO << "QueryTrans 1." <<  " Error info: " << err_string;
   try {
     if (!look_up_flag)
       stamped_transform =
@@ -311,8 +315,10 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
           << stamped_transform.transform().rotation().qz();
   } catch (tf2::TransformException& ex) {
     AERROR << ex.what();
+    AERROR << "QueryTrans catch.";
     return false;
   }
+  AINFO << "QueryTrans 2.";
   return true;
 }
 

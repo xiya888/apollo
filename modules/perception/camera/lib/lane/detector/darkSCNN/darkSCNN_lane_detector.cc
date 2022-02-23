@@ -216,7 +216,7 @@ bool DarkSCNNLaneDetector::Detect(const LaneDetectorOptions &options,
   ADEBUG << "resize gpu finish.";
   cudaDeviceSynchronize();
   cnnadapter_lane_->Infer();
-  ADEBUG << "infer finish.";
+  AINFO << "infer finish.";
 
   auto elapsed_1 = std::chrono::high_resolution_clock::now() - start;
   int64_t microseconds_1 =
@@ -289,9 +289,9 @@ bool DarkSCNNLaneDetector::Detect(const LaneDetectorOptions &options,
   time_2 += microseconds_2 - microseconds_1;
 
   time_num += 1;
-  ADEBUG << "Avg detection infer time: " << time_1 / time_num
+  AINFO << "Avg detection infer time: " << time_1 / time_num
          << " Avg detection merge output time: " << time_2 / time_num;
-  ADEBUG << "Lane detection done!";
+  AINFO << "Lane detection done!";
   return true;
 }
 

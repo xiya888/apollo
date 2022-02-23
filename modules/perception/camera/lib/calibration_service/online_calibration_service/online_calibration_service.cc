@@ -205,8 +205,8 @@ void OnlineCalibrationService::SetCameraHeightAndPitch(
     auto iter_ground_height = name_camera_ground_height_map.find(iter->first);
     auto iter_pitch_angle_diff =
         name_camera_pitch_angle_diff_map.find(iter->first);
-    ACHECK(iter_ground_height != name_camera_ground_height_map.end());
-    ACHECK(iter_pitch_angle_diff != name_camera_pitch_angle_diff_map.end());
+    // ACHECK(iter_ground_height != name_camera_ground_height_map.end());
+    // ACHECK(iter_pitch_angle_diff != name_camera_pitch_angle_diff_map.end());
     // set camera status
     name_camera_status_map_[iter->first].camera_ground_height =
         iter_ground_height->second;

@@ -150,7 +150,14 @@ bool ObstacleCameraPerception::Init(
       options.lane_calibration_working_sensor_name;
 
   // Init lane
-  InitLane(work_root, perception_param_);
+  if (perception_param_.enable_lane_detector()) {
+    AINFO << "Lane config can found.";
+    InitLane(work_root, perception_param_);
+  } else {
+    AINFO << "Lane config cannot found.";
+    lane_detector_ = nullptr;
+    lane_postprocessor_ = nullptr;
+  }  
 
   // Init calibration service
   InitCalibrationService(work_root, model, perception_param_);
@@ -297,7 +304,10 @@ void ObstacleCameraPerception::SetIm2CarHomography(
     AERROR << "Calibraion service is not available";
     return;
   }
-  lane_postprocessor_->SetIm2CarHomography(homography_im2car);
+  if(lane_postprocessor_) {
+    AINFO << "lane_postprocessor_->SetIm2CarHomography.";
+    lane_postprocessor_->SetIm2CarHomography(homography_im2car);
+  }
 }
 
 bool ObstacleCameraPerception::GetCalibrationService(
@@ -325,17 +335,21 @@ bool ObstacleCameraPerception::Perception(
 
   LaneDetectorOptions lane_detetor_options;
   LanePostprocessorOptions lane_postprocessor_options;
-  if (!lane_detector_->Detect(lane_detetor_options, frame)) {
+  if (lane_detector_ && 
+      !lane_detector_->Detect(lane_detetor_options, frame)) {
     AERROR << "Failed to detect lane.";
     return false;
   }
+  AINFO << "After lane_detector_.";
   PERF_BLOCK_END_WITH_INDICATOR(frame->data_provider->sensor_name(),
                                 "LaneDetector");
 
-  if (!lane_postprocessor_->Process2D(lane_postprocessor_options, frame)) {
+  if (lane_postprocessor_ && 
+      !lane_postprocessor_->Process2D(lane_postprocessor_options, frame)) {
     AERROR << "Failed to postprocess lane 2D.";
     return false;
   }
+  AINFO << "After lane_postprocessor_.";
   PERF_BLOCK_END_WITH_INDICATOR(frame->data_provider->sensor_name(),
                                 "LanePostprocessor2D");
 
@@ -344,10 +358,12 @@ bool ObstacleCameraPerception::Perception(
   PERF_BLOCK_END_WITH_INDICATOR(frame->data_provider->sensor_name(),
                                 "CalibrationService");
 
-  if (!lane_postprocessor_->Process3D(lane_postprocessor_options, frame)) {
+  if (lane_postprocessor_ && 
+      !lane_postprocessor_->Process3D(lane_postprocessor_options, frame)) {
     AERROR << "Failed to postprocess lane 3D.";
     return false;
   }
+  AINFO << "After lane_postprocessor_3d.";
   PERF_BLOCK_END_WITH_INDICATOR(frame->data_provider->sensor_name(),
                                 "LanePostprocessor3D");
 

@@ -1,4 +1,5 @@
 gpu_id : 0
+enable_lane_detector : false
 detector_param {
   plugin_param{
     name : "YoloObstacleDetector"

@@ -142,6 +142,7 @@ bool LoadExtrinsics(const std::string &yaml_file,
   q.y() = qy;
   q.z() = qz;
   q.w() = qw;
+  // Quaternion to Rotation Matrix Conversion
   (*camera_extrinsic).block<3, 3>(0, 0) = q.normalized().toRotationMatrix();
   (*camera_extrinsic)(0, 3) = tx;
   (*camera_extrinsic)(1, 3) = ty;
@@ -257,7 +258,10 @@ bool FusionCameraDetectionComponent::Init() {
       visualize_.SetDirectory(visual_debug_folder_);
     }
   }
-  cv::namedWindow("object_show", 0);
+  if (camera_names_.size() == 2) {
+    cv::namedWindow("object_show", 0);
+  }
+  AERROR << "fusion_camera_detection_component end.";
   return true;
 }
 
@@ -342,10 +346,11 @@ int FusionCameraDetectionComponent::InitConfig() {
   std::string camera_names_str = fusion_camera_detection_param.camera_names();
   boost::algorithm::split(camera_names_, camera_names_str,
                           boost::algorithm::is_any_of(","));
-  if (camera_names_.size() != 2) {
-    AERROR << "Now FusionCameraDetectionComponent only support 2 cameras";
-    return cyber::FAIL;
-  }
+  // if (camera_names_.size() != 2) {
+  //   AERROR << "Now FusionCameraDetectionComponent only support 2 cameras";
+  //   return cyber::FAIL;
+  // }
+  AERROR << "camera_names_.size(): " << camera_names_.size();
 
   std::string input_camera_channel_names_str =
       fusion_camera_detection_param.input_camera_channel_names();
@@ -410,7 +415,7 @@ int FusionCameraDetectionComponent::InitConfig() {
 
   std::string format_str = R"(
       FusionCameraDetectionComponent InitConfig success
-      camera_names:    %s, %s
+      camera_names:    %s
       camera_obstacle_perception_conf_dir:    %s
       camera_obstacle_perception_conf_file:    %s
       frame_capacity:    %d
@@ -426,7 +431,7 @@ int FusionCameraDetectionComponent::InitConfig() {
       write_visual_img_:    %s)";
   std::string config_info_str =
       str(boost::format(format_str.c_str()) % camera_names_[0] %
-          camera_names_[1] % camera_perception_init_options_.root_dir %
+          camera_perception_init_options_.root_dir %
           camera_perception_init_options_.conf_file % frame_capacity_ %
           image_channel_num_ % enable_undistortion_ % enable_visualization_ %
           output_obstacles_channel_name_ %
@@ -439,10 +444,10 @@ int FusionCameraDetectionComponent::InitConfig() {
 }
 
 int FusionCameraDetectionComponent::InitSensorInfo() {
-  if (camera_names_.size() != 2) {
-    AERROR << "invalid camera_names_.size(): " << camera_names_.size();
-    return cyber::FAIL;
-  }
+  // if (camera_names_.size() != 2) {
+  //   AERROR << "invalid camera_names_.size(): " << camera_names_.size();
+  //   return cyber::FAIL;
+  // }
 
   auto *sensor_manager = common::SensorManager::Instance();
   for (size_t i = 0; i < camera_names_.size(); ++i) {
@@ -473,15 +478,14 @@ int FusionCameraDetectionComponent::InitSensorInfo() {
   image_height_ = static_cast<int>(camera_model_ptr->get_height());
 
   std::string format_str = R"(
-      camera_names: %s %s
-      tf_camera_frame_ids: %s %s
+      camera_names: %s
+      tf_camera_frame_ids: %s
       image_width: %d
       image_height: %d
       image_channel_num: %d)";
   std::string sensor_info_str =
       str(boost::format(format_str.c_str()) % camera_names_[0] %
-          camera_names_[1] % tf_camera_frame_id_map_[camera_names_[0]] %
-          tf_camera_frame_id_map_[camera_names_[1]] % image_width_ %
+          tf_camera_frame_id_map_[camera_names_[0]] % image_width_ %
           image_height_ % image_channel_num_);
   AINFO << sensor_info_str;
 
@@ -499,10 +503,10 @@ int FusionCameraDetectionComponent::InitAlgorithmPlugin() {
 }
 
 int FusionCameraDetectionComponent::InitCameraFrames() {
-  if (camera_names_.size() != 2) {
-    AERROR << "invalid camera_names_.size(): " << camera_names_.size();
-    return cyber::FAIL;
-  }
+  // if (camera_names_.size() != 2) {
+  //   AERROR << "invalid camera_names_.size(): " << camera_names_.size();
+  //   return cyber::FAIL;
+  // }
   // fixed size
   camera_frames_.resize(frame_capacity_);
   if (camera_frames_.empty()) {
@@ -571,13 +575,15 @@ int FusionCameraDetectionComponent::InitProjectMatrix() {
   if (!GetProjectMatrix(camera_names_, extrinsic_map_, intrinsic_map_,
                         &project_matrix_, &pitch_diff_)) {
     AERROR << "GetProjectMatrix failed";
-    return cyber::FAIL;
+    // return cyber::FAIL;
   }
   AINFO << "project_matrix_: " << project_matrix_;
   AINFO << "pitch_diff_:" << pitch_diff_;
   name_camera_pitch_angle_diff_map_[camera_names_[0]] = 0.f;
-  name_camera_pitch_angle_diff_map_[camera_names_[1]] =
-      static_cast<float>(pitch_diff_);
+  if (camera_names_.size() == 2) {
+    name_camera_pitch_angle_diff_map_[camera_names_[1]] =
+        static_cast<float>(pitch_diff_);
+  }
 
   return cyber::SUCC;
 }
@@ -667,9 +673,10 @@ int FusionCameraDetectionComponent::InternalProc(
     apollo::perception::PerceptionObstacles *out_message) {
   const double msg_timestamp =
       in_message->measurement_time() + timestamp_offset_;
-  AERROR << std::fixed << std::setprecision(16) <<  "measurement_time: " 
-         << in_message->measurement_time() << " ,timestamp_offset_: " 
-         << timestamp_offset_ << " ,msg_timestamp: "<< msg_timestamp;
+  AERROR << std::fixed << std::setprecision(16)
+         << "measurement_time: " << in_message->measurement_time()
+         << " ,timestamp_offset_: " << timestamp_offset_
+         << " ,msg_timestamp: " << msg_timestamp;
   // const double msg_timestamp =
   //     in_message->header().timestamp_sec() + timestamp_offset_;
   const int frame_size = static_cast<int>(camera_frames_.size());
@@ -711,7 +718,11 @@ int FusionCameraDetectionComponent::InternalProc(
   camera_frame.frame_id = frame_id_;
   camera_frame.timestamp = msg_timestamp;
   // get narrow to short projection matrix
-  if (camera_frame.data_provider->sensor_name() == camera_names_[1]) {
+  if (camera_names_.size() == 2 &&
+      camera_frame.data_provider->sensor_name() == camera_names_[1]) {
+    AINFO << "get narrow to short projection matrix sensor_name(): "
+          <<  camera_frame.data_provider->sensor_name() 
+          <<  " ,camera_names_[1]: " << camera_names_[1];
     camera_frame.project_matrix = project_matrix_;
   } else {
     camera_frame.project_matrix.setIdentity();
@@ -818,7 +829,8 @@ int FusionCameraDetectionComponent::InternalProc(
     memcpy(output_image.data, out_image.cpu_data(),
            out_image.total() * sizeof(uint8_t));
     // new
-    if (camera_frame.data_provider->sensor_name() == "front_6mm") {
+    if (camera_names_.size() == 2 &&
+        camera_frame.data_provider->sensor_name() == "front_6mm") {
       const std::vector<base::ObjectPtr> &objects =
           camera_frame.tracked_objects;
       for (const auto &obj : objects) {
@@ -919,6 +931,7 @@ int FusionCameraDetectionComponent::MakeProtobufMsg(
       lane_markers->add_next_right_lane_marker();
 
   for (const auto &lane : lane_objects) {
+    AINFO << "lane_objects MakeProtobufMsg.";
     base::LaneLineCubicCurve curve_coord = lane.curve_car_coord;
 
     switch (lane.pos_type) {

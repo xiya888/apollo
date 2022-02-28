@@ -68,7 +68,7 @@ bool CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
   CHECK_NOTNULL(latest_feature_ptr);
   if (!latest_feature_ptr->has_lane() ||
       !latest_feature_ptr->lane().has_lane_graph()) {
-    ADEBUG << "Obstacle [" << id << "] has no lane graph.";
+    AERROR << "Obstacle [" << id << "] has no lane graph.";
     return false;
   }
   LaneGraph* lane_graph_ptr =
@@ -79,7 +79,7 @@ bool CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
     return false;
   }
 
-  ADEBUG << "There are " << lane_graph_ptr->lane_sequence_size()
+  AINFO << "There are " << lane_graph_ptr->lane_sequence_size()
          << " lane sequences with probabilities:";
   // For every possible lane sequence, extract features that are needed
   // to feed into our trained model.
@@ -92,7 +92,7 @@ bool CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
     if (feature_values.size() !=
         OBSTACLE_FEATURE_SIZE + SINGLE_LANE_FEATURE_SIZE * LANE_POINTS_SIZE) {
       lane_sequence_ptr->set_probability(0.0);
-      ADEBUG << "Skip lane sequence due to incorrect feature size";
+      AERROR << "Skip lane sequence due to incorrect feature size";
       continue;
     }
 
@@ -104,19 +104,19 @@ bool CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
                                   lane_sequence_ptr,
                                   &interaction_feature_values);
       if (interaction_feature_values.size() != INTERACTION_FEATURE_SIZE) {
-        ADEBUG << "Obstacle [" << id << "] has fewer than "
+        AERROR << "Obstacle [" << id << "] has fewer than "
                << "expected lane feature_values"
                << interaction_feature_values.size() << ".";
         return false;
       }
-      ADEBUG << "Interaction feature size = "
+      AINFO << "Interaction feature size = "
              << interaction_feature_values.size();
       feature_values.insert(feature_values.end(),
                             interaction_feature_values.begin(),
                             interaction_feature_values.end());
       FeatureOutput::InsertDataForLearning(*latest_feature_ptr, feature_values,
                                            "lane_scanning", lane_sequence_ptr);
-      ADEBUG << "Save extracted features for learning locally.";
+      AERROR << "Save extracted features for learning locally.";
       return true;  // Skip Compute probability for offline mode
     }
 
@@ -134,6 +134,7 @@ bool CruiseMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
       ModelInference(torch_inputs, torch_cutin_model_, lane_sequence_ptr);
     }
   }
+  AINFO << "CruiseMLPEvaluator::Evaluate End.";
   return true;
 }
 

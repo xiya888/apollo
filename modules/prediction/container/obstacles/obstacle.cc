@@ -247,7 +247,7 @@ void Obstacle::BuildJunctionFeature() {
   // If obstacle is not in the given junction, then exit.
   const std::string& junction_id = junction_analyzer_->GetJunctionId();
   if (!IsInJunction(junction_id)) {
-    ADEBUG << "Obstacle [" << id_ << "] is not in junction [" << junction_id
+    AERROR << "Obstacle [" << id_ << "] is not in junction [" << junction_id
            << "]";
     return;
   }
@@ -303,7 +303,7 @@ void Obstacle::SetJunctionFeatureWithEnterLane(const std::string& enter_lane_id,
 void Obstacle::SetJunctionFeatureWithoutEnterLane(Feature* const feature_ptr) {
   // Sanity checks.
   if (!feature_ptr->has_lane()) {
-    ADEBUG << "Obstacle [" << id_ << "] has no lane.";
+    AINFO << "Obstacle [" << id_ << "] has no lane.";
     return;
   }
 
@@ -322,7 +322,7 @@ void Obstacle::SetJunctionFeatureWithoutEnterLane(Feature* const feature_ptr) {
     }
   }
   if (start_lane_ids.empty()) {
-    ADEBUG << "Obstacle [" << id_ << "] has no lane in junction";
+    AINFO << "Obstacle [" << id_ << "] has no lane in junction";
     return;
   }
   // TODO(kechxu) Maybe output all exits if no start lane found
@@ -348,7 +348,7 @@ bool Obstacle::SetId(const PerceptionObstacle& perception_obstacle,
                                       : perception_obstacle.id();
   if (id_ < 0) {
     id_ = id;
-    ADEBUG << "Obstacle has id [" << id_ << "].";
+    AINFO << "Obstacle has id [" << id_ << "].";
   } else {
     if (id_ != id) {
       AERROR << "Obstacle [" << id_ << "] has a mismatched ID [" << id
@@ -363,7 +363,7 @@ bool Obstacle::SetId(const PerceptionObstacle& perception_obstacle,
 void Obstacle::SetType(const PerceptionObstacle& perception_obstacle,
                        Feature* feature) {
   type_ = perception_obstacle.type();
-  ADEBUG << "Obstacle [" << id_ << "] has type [" << type_ << "].";
+  AINFO << "Obstacle [" << id_ << "] has type [" << type_ << "].";
   feature->set_type(type_);
 }
 
@@ -372,7 +372,7 @@ void Obstacle::SetTimestamp(const PerceptionObstacle& perception_obstacle,
   double ts = timestamp;
   feature->set_timestamp(ts);
 
-  ADEBUG << "Obstacle [" << id_ << "] has timestamp [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has timestamp [" << std::fixed
          << std::setprecision(6) << ts << "].";
 }
 
@@ -380,7 +380,7 @@ void Obstacle::SetPolygonPoints(const PerceptionObstacle& perception_obstacle,
                                 Feature* feature) {
   for (const auto& polygon_point : perception_obstacle.polygon_point()) {
     *feature->add_polygon_point() = polygon_point;
-    ADEBUG << "Obstacle [" << id_
+    AINFO << "Obstacle [" << id_
            << "] has new corner point:" << polygon_point.DebugString();
   }
 }
@@ -388,7 +388,7 @@ void Obstacle::SetPolygonPoints(const PerceptionObstacle& perception_obstacle,
 void Obstacle::SetPosition(const PerceptionObstacle& perception_obstacle,
                            Feature* feature) {
   *feature->mutable_position() = perception_obstacle.position();
-  ADEBUG << "Obstacle [" << id_
+  AINFO << "Obstacle [" << id_
          << "] has position:" << perception_obstacle.position().DebugString();
 }
 
@@ -460,7 +460,7 @@ void Obstacle::SetVelocity(const PerceptionObstacle& perception_obstacle,
       double angle_diff =
           common::math::NormalizeAngle(shift_heading - velocity_heading);
       if (std::fabs(angle_diff) > FLAGS_max_lane_angle_diff) {
-        ADEBUG << "Shift velocity heading to be " << shift_heading;
+        AINFO << "Shift velocity heading to be " << shift_heading;
         velocity_heading = shift_heading;
       }
     }
@@ -474,13 +474,13 @@ void Obstacle::SetVelocity(const PerceptionObstacle& perception_obstacle,
   feature->set_velocity_heading(velocity_heading);
   feature->set_speed(speed);
 
-  ADEBUG << "Obstacle [" << id_ << "] has velocity [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has velocity [" << std::fixed
          << std::setprecision(6) << velocity_x << ", " << std::fixed
          << std::setprecision(6) << velocity_y << ", " << std::fixed
          << std::setprecision(6) << velocity_z << "]";
-  ADEBUG << "Obstacle [" << id_ << "] has velocity heading [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has velocity heading [" << std::fixed
          << std::setprecision(6) << velocity_heading << "] ";
-  ADEBUG << "Obstacle [" << id_ << "] has speed [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has speed [" << std::fixed
          << std::setprecision(6) << speed << "].";
 }
 
@@ -556,11 +556,11 @@ void Obstacle::SetAcceleration(Feature* feature) {
   feature->mutable_acceleration()->set_z(acc_z);
   feature->set_acc(acc);
 
-  ADEBUG << "Obstacle [" << id_ << "] has acceleration [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has acceleration [" << std::fixed
          << std::setprecision(6) << acc_x << ", " << std::fixed
          << std::setprecision(6) << acc_y << ", " << std::fixed
          << std::setprecision(6) << acc_z << "]";
-  ADEBUG << "Obstacle [" << id_ << "] has acceleration value [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has acceleration value [" << std::fixed
          << std::setprecision(6) << acc << "].";
 }
 
@@ -572,7 +572,7 @@ void Obstacle::SetTheta(const PerceptionObstacle& perception_obstacle,
   }
   feature->set_theta(theta);
 
-  ADEBUG << "Obstacle [" << id_ << "] has theta [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has theta [" << std::fixed
          << std::setprecision(6) << theta << "].";
 }
 
@@ -596,7 +596,7 @@ void Obstacle::SetLengthWidthHeight(
   feature->set_width(width);
   feature->set_height(height);
 
-  ADEBUG << "Obstacle [" << id_ << "] has dimension [" << std::fixed
+  AINFO << "Obstacle [" << id_ << "] has dimension [" << std::fixed
          << std::setprecision(6) << length << ", " << std::fixed
          << std::setprecision(6) << width << ", " << std::fixed
          << std::setprecision(6) << height << "].";
@@ -642,7 +642,7 @@ void Obstacle::SetCurrentLanes(Feature* feature) {
                         true, max_num_lane, max_angle_diff, &current_lanes);
   current_lanes_ = current_lanes;
   if (current_lanes_.empty()) {
-    ADEBUG << "Obstacle [" << id_ << "] has no current lanes.";
+    AINFO << "Obstacle [" << id_ << "] has no current lanes.";
     return;
   }
   Lane lane;
@@ -689,12 +689,12 @@ void Obstacle::SetCurrentLanes(Feature* feature) {
       min_heading_diff = std::fabs(angle_diff);
     }
     clusters_ptr_->AddObstacle(id_, lane_id, s, l);
-    ADEBUG << "Obstacle [" << id_ << "] has current lanes ["
+    AINFO << "Obstacle [" << id_ << "] has current lanes ["
            << lane_feature->ShortDebugString() << "].";
   }
 
   if (lane.has_lane_feature()) {
-    ADEBUG << "Obstacle [" << id_ << "] has one current lane ["
+    AINFO << "Obstacle [" << id_ << "] has one current lane ["
            << lane.lane_feature().ShortDebugString() << "].";
   }
 
@@ -715,7 +715,7 @@ void Obstacle::SetNearbyLanes(Feature* feature) {
                                            current_lanes_, max_num_lane,
                                            &nearby_lanes);
   if (nearby_lanes.empty()) {
-    ADEBUG << "Obstacle [" << id_ << "] has no nearby lanes.";
+    AINFO << "Obstacle [" << id_ << "] has no nearby lanes.";
     return;
   }
 
@@ -729,7 +729,7 @@ void Obstacle::SetNearbyLanes(Feature* feature) {
         nearby_lane->lane().has_type() &&
         (nearby_lane->lane().type() == ::apollo::hdmap::Lane::BIKING ||
          nearby_lane->lane().type() == ::apollo::hdmap::Lane::SIDEWALK)) {
-      ADEBUG << "Obstacle [" << id_ << "] ignores disqualified lanes.";
+      AINFO << "Obstacle [" << id_ << "] ignores disqualified lanes.";
       continue;
     }
 
@@ -762,7 +762,7 @@ void Obstacle::SetNearbyLanes(Feature* feature) {
     lane_feature->set_dist_to_left_boundary(left - l);
     lane_feature->set_dist_to_right_boundary(right + l);
     lane_feature->set_lane_type(nearby_lane->lane().type());
-    ADEBUG << "Obstacle [" << id_ << "] has nearby lanes ["
+    AINFO << "Obstacle [" << id_ << "] has nearby lanes ["
            << lane_feature->ShortDebugString() << "]";
   }
 }
@@ -809,11 +809,11 @@ void Obstacle::BuildLaneGraph() {
   Feature* feature = mutable_latest_feature();
   // No need to BuildLaneGraph for those non-moving obstacles.
   if (feature->is_still() && id_ != FLAGS_ego_vehicle_id) {
-    ADEBUG << "Not build lane graph for still obstacle";
+    AERROR << "Not build lane graph for still obstacle";
     return;
   }
   if (feature->lane().lane_graph().lane_sequence_size() > 0) {
-    ADEBUG << "Not build lane graph for an old obstacle";
+    AERROR << "Not build lane graph for an old obstacle";
     return;
   }
   double speed = feature->speed();
@@ -857,7 +857,7 @@ void Obstacle::BuildLaneGraph() {
       lane_seq_ptr->set_vehicle_on_lane(true);
       lane_seq_ptr->set_lane_type(lane.lane_type());
       SetLaneSequenceStopSign(lane_seq_ptr);
-      ADEBUG << "Obstacle [" << id_ << "] set a lane sequence ["
+      AINFO << "Obstacle [" << id_ << "] set a lane sequence ["
              << lane_seq.ShortDebugString() << "].";
     }
     if (curr_lane_count >= FLAGS_max_num_current_lane) {
@@ -888,7 +888,7 @@ void Obstacle::BuildLaneGraph() {
       lane_seq_ptr->set_vehicle_on_lane(false);
       lane_seq_ptr->set_lane_type(lane.lane_type());
       SetLaneSequenceStopSign(lane_seq_ptr);
-      ADEBUG << "Obstacle [" << id_ << "] set a lane sequence ["
+      AINFO << "Obstacle [" << id_ << "] set a lane sequence ["
              << lane_seq.ShortDebugString() << "].";
     }
     if (nearby_lane_count >= FLAGS_max_num_nearby_lane) {
@@ -900,7 +900,7 @@ void Obstacle::BuildLaneGraph() {
     SetLanePoints(feature);
     SetLaneSequencePath(feature->mutable_lane()->mutable_lane_graph());
   }
-  ADEBUG << "Obstacle [" << id_ << "] set lane graph features.";
+  AINFO << "Obstacle [" << id_ << "] set lane graph features.";
 }
 
 void Obstacle::SetLaneSequenceStopSign(LaneSequence* lane_sequence_ptr) {
@@ -917,7 +917,7 @@ void Obstacle::SetLaneSequenceStopSign(LaneSequence* lane_sequence_ptr) {
       lane_sequence_ptr->mutable_stop_sign()->CopyFrom(stop_sign);
       lane_sequence_ptr->mutable_stop_sign()->set_lane_sequence_s(
           stop_sign.lane_s() + accumulate_s);
-      ADEBUG << "Set StopSign for LaneSequence ["
+      AINFO << "Set StopSign for LaneSequence ["
              << lane_sequence_ptr->lane_sequence_id() << "].";
       break;
     }
@@ -986,11 +986,11 @@ void Obstacle::BuildLaneGraphFromLeftToRight() {
   // No need to BuildLaneGraph for those non-moving obstacles.
   Feature* feature = mutable_latest_feature();
   if (feature->is_still()) {
-    ADEBUG << "Don't build lane graph for non-moving obstacle.";
+    AERROR << "Don't build lane graph for non-moving obstacle.";
     return;
   }
   if (feature->lane().lane_graph_ordered().lane_sequence_size() > 0) {
-    ADEBUG << "Don't build lane graph for an old obstacle.";
+    AERROR << "Don't build lane graph for an old obstacle.";
     return;
   }
   // double speed = feature->speed();
@@ -1053,7 +1053,7 @@ void Obstacle::BuildLaneGraphFromLeftToRight() {
       lane_seq_ptr->set_lane_s(feature->lane().lane_feature().lane_s());
       lane_seq_ptr->set_lane_l(feature->lane().lane_feature().lane_l());
       lane_seq_ptr->set_vehicle_on_lane(vehicle_is_on_lane);
-      ADEBUG << "Obstacle [" << id_ << "] set a lane sequence ["
+      AINFO << "Obstacle [" << id_ << "] set a lane sequence ["
              << lane_seq.ShortDebugString() << "].";
     }
   }
@@ -1064,7 +1064,7 @@ void Obstacle::BuildLaneGraphFromLeftToRight() {
                   feature->mutable_lane()->mutable_lane_graph_ordered());
     SetLaneSequencePath(feature->mutable_lane()->mutable_lane_graph_ordered());
   }
-  ADEBUG << "Obstacle [" << id_ << "] set lane graph features.";
+  AINFO << "Obstacle [" << id_ << "] set lane graph features.";
 }
 
 // The default SetLanePoints applies to lane_graph with
@@ -1081,7 +1081,7 @@ void Obstacle::SetLanePoints(const Feature* feature,
                              const uint64_t max_num_lane_point,
                              const bool is_bidirection,
                              LaneGraph* const lane_graph) {
-  ADEBUG << "Spacing = " << lane_point_spacing;
+  AINFO << "Spacing = " << lane_point_spacing;
   // Sanity checks.
   if (feature == nullptr || !feature->has_velocity_heading()) {
     AERROR << "Null feature or no velocity heading.";
@@ -1120,7 +1120,7 @@ void Obstacle::SetLanePoints(const Feature* feature,
         if (lane_seg_s > lane_segment->end_s()) {
           // If already exceeds the current lane_segment, then go to the
           // next following one.
-          ADEBUG << "Move on to the next lane-segment.";
+          AINFO << "Move on to the next lane-segment.";
           lane_seg_s = lane_seg_s - lane_segment->end_s();
           ++lane_index;
         } else {
@@ -1129,13 +1129,13 @@ void Obstacle::SetLanePoints(const Feature* feature,
           std::string lane_id = lane_segment->lane_id();
           lane_segment->set_lane_turn_type(
               PredictionMap::LaneTurnType(lane_id));
-          ADEBUG << "Currently on " << lane_id;
+          AINFO << "Currently on " << lane_id;
           auto lane_info = PredictionMap::LaneById(lane_id);
           if (lane_info == nullptr) {
             break;
           }
           // 2. Get the closeset lane_point
-          ADEBUG << "Lane-segment s = " << lane_seg_s;
+          AINFO << "Lane-segment s = " << lane_seg_s;
           Eigen::Vector2d lane_point_pos =
               PredictionMap::PositionOnLane(lane_info, lane_seg_s);
           double lane_point_heading =
@@ -1177,7 +1177,7 @@ void Obstacle::SetLanePoints(const Feature* feature,
       if (lane_seg_s > lane_segment->end_s()) {
         // If already exceeds the current lane_segment, then go to the
         // next following one.
-        ADEBUG << "Move on to the next lane-segment.";
+        AINFO << "Move on to the next lane-segment.";
         lane_seg_s = lane_seg_s - lane_segment->end_s();
         ++lane_index;
       } else {
@@ -1185,13 +1185,13 @@ void Obstacle::SetLanePoints(const Feature* feature,
         // 1. Sanity checks.
         std::string lane_id = lane_segment->lane_id();
         lane_segment->set_lane_turn_type(PredictionMap::LaneTurnType(lane_id));
-        ADEBUG << "Currently on " << lane_id;
+        AINFO << "Currently on " << lane_id;
         auto lane_info = PredictionMap::LaneById(lane_id);
         if (lane_info == nullptr) {
           break;
         }
         // 2. Get the closeset lane_point
-        ADEBUG << "Lane-segment s = " << lane_seg_s;
+        AINFO << "Lane-segment s = " << lane_seg_s;
         Eigen::Vector2d lane_point_pos =
             PredictionMap::PositionOnLane(lane_info, lane_seg_s);
         double lane_point_heading =
@@ -1201,7 +1201,7 @@ void Obstacle::SetLanePoints(const Feature* feature,
         double lane_point_angle_diff =
             common::math::AngleDiff(lane_point_heading, heading);
         // 3. Update it into the lane_graph
-        ADEBUG << lane_point_pos[0] << "    " << lane_point_pos[1];
+        AINFO << lane_point_pos[0] << "    " << lane_point_pos[1];
         LanePoint lane_point;
         // Update direct information.
         lane_point.mutable_position()->set_x(lane_point_pos[0]);
@@ -1221,7 +1221,7 @@ void Obstacle::SetLanePoints(const Feature* feature,
       }
     }
   }
-  ADEBUG << "Obstacle [" << id_ << "] has lane segments and points.";
+  AINFO << "Obstacle [" << id_ << "] has lane segments and points.";
 }
 
 void Obstacle::SetLaneSequencePath(LaneGraph* const lane_graph) {
@@ -1321,7 +1321,7 @@ void Obstacle::SetMotionStatus() {
 
   if (history_size == 1) {
     if (speed < speed_threshold) {
-      ADEBUG << "Obstacle [" << id_ << "] has a small speed [" << speed
+      AINFO << "Obstacle [" << id_ << "] has a small speed [" << speed
              << "] and is considered stationary in the first frame.";
       feature_history_.front().set_is_still(true);
     } else {
@@ -1353,21 +1353,21 @@ void Obstacle::SetMotionStatus() {
   double speed_sensibility = std::sqrt(2 * history_size) * 4 * pos_std /
                              ((history_size + 1) * delta_ts);
   if (speed < speed_threshold) {
-    ADEBUG << "Obstacle [" << id_ << "] has a small speed [" << speed
+    AINFO << "Obstacle [" << id_ << "] has a small speed [" << speed
            << "] and is considered stationary.";
     feature_history_.front().set_is_still(true);
   } else if (speed_sensibility < speed_threshold) {
-    ADEBUG << "Obstacle [" << id_ << "]"
+    AINFO << "Obstacle [" << id_ << "]"
            << "] considered moving [sensibility = " << speed_sensibility << "]";
     feature_history_.front().set_is_still(false);
   } else {
     double distance = std::hypot(avg_drift_x, avg_drift_y);
     double distance_std = std::sqrt(2.0 / len) * pos_std;
     if (distance > 2.0 * distance_std) {
-      ADEBUG << "Obstacle [" << id_ << "] is moving.";
+      AINFO << "Obstacle [" << id_ << "] is moving.";
       feature_history_.front().set_is_still(false);
     } else {
-      ADEBUG << "Obstacle [" << id_ << "] is stationary.";
+      AINFO << "Obstacle [" << id_ << "] is stationary.";
       feature_history_.front().set_is_still(true);
     }
   }
@@ -1398,7 +1398,7 @@ void Obstacle::SetMotionStatusBySpeed() {
 
 void Obstacle::InsertFeatureToHistory(const Feature& feature) {
   feature_history_.emplace_front(feature);
-  ADEBUG << "Obstacle [" << id_ << "] inserted a frame into the history.";
+  AINFO << "Obstacle [" << id_ << "] inserted a frame into the history.";
 }
 
 std::unique_ptr<Obstacle> Obstacle::Create(
@@ -1434,10 +1434,11 @@ void Obstacle::DiscardOutdatedHistory() {
   while (latest_ts - feature_history_.back().timestamp() >=
          FLAGS_max_history_time) {
     feature_history_.pop_back();
+    AINFO << "feature_history_.pop_back";
   }
   auto num_of_discarded_frames = num_of_frames - feature_history_.size();
   if (num_of_discarded_frames > 0) {
-    ADEBUG << "Obstacle [" << id_ << "] discards " << num_of_discarded_frames
+    AINFO << "Obstacle [" << id_ << "] discards " << num_of_discarded_frames
            << " historical features";
   }
 }

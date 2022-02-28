@@ -27,9 +27,13 @@ bool CyclistKeepLaneEvaluator::Evaluate(
     Obstacle* obstacle_ptr, ObstaclesContainer* obstacles_container) {
   CHECK_NOTNULL(obstacle_ptr);
 
+  // Set Evaluator Type
   obstacle_ptr->SetEvaluatorType(evaluator_type_);
 
   int id = obstacle_ptr->id();
+  // Whether the feature is initialized, this method is a built-in method of 
+  // protobuf, confirm whether the required fields have been assigned, it seems 
+  // that there is no need to judge?
   if (!obstacle_ptr->latest_feature().IsInitialized()) {
     AERROR << "Obstacle [" << id << "] has no latest feature.";
     return false;
@@ -37,16 +41,18 @@ bool CyclistKeepLaneEvaluator::Evaluate(
 
   Feature* latest_feature_ptr = obstacle_ptr->mutable_latest_feature();
   CHECK_NOTNULL(latest_feature_ptr);
+  // Check if feature contains lane graph.
   if (!latest_feature_ptr->has_lane() ||
       !latest_feature_ptr->lane().has_lane_graph() ||
       !latest_feature_ptr->lane().has_lane_feature()) {
-    ADEBUG << "Obstacle [" << id << "] has no lane graph.";
+    AERROR << "Obstacle [" << id << "] has no lane graph.";
     return false;
   }
 
   LaneGraph* lane_graph_ptr =
       latest_feature_ptr->mutable_lane()->mutable_lane_graph();
   CHECK_NOTNULL(lane_graph_ptr);
+  // Check if lane graph is empty.
   if (lane_graph_ptr->lane_sequence().empty()) {
     AERROR << "Obstacle [" << id << "] has no lane sequences.";
     return false;
@@ -55,10 +61,12 @@ bool CyclistKeepLaneEvaluator::Evaluate(
   std::string curr_lane_id =
       latest_feature_ptr->lane().lane_feature().lane_id();
 
+  // Calculate the probability of each lane sequence.
   for (auto& lane_sequence : *lane_graph_ptr->mutable_lane_sequence()) {
     const double probability = ComputeProbability(curr_lane_id, lane_sequence);
     lane_sequence.set_probability(probability);
   }
+  AINFO << "CyclistKeepLaneEvaluator::Evaluate End.";
   return true;
 }
 

@@ -87,7 +87,7 @@ void ObstaclesContainer::Insert(const ::google::protobuf::Message& message) {
   }
   if (std::fabs(timestamp - timestamp_) > FLAGS_replay_timestamp_gap) {
     ptr_obstacles_.Clear();
-    ADEBUG << "Replay mode is enabled.";
+    AINFO << "Replay mode is enabled.";
   } else if (timestamp <= timestamp_) {
     AERROR << "Invalid timestamp curr [" << timestamp << "] v.s. prev ["
            << timestamp_ << "].";
@@ -95,6 +95,7 @@ void ObstaclesContainer::Insert(const ::google::protobuf::Message& message) {
   }
 
   switch (FLAGS_prediction_offline_mode) {
+    AINFO << "prediction_offline_mode: " << FLAGS_prediction_offline_mode;
     case 1: {
       if (std::fabs(timestamp - timestamp_) > FLAGS_replay_timestamp_gap ||
           FeatureOutput::Size() > FLAGS_max_num_dump_feature) {
@@ -140,17 +141,17 @@ void ObstaclesContainer::Insert(const ::google::protobuf::Message& message) {
   }
 
   timestamp_ = timestamp;
-  ADEBUG << "Current timestamp is [" << std::fixed << std::setprecision(6)
+  AINFO << "Current timestamp is [" << std::fixed << std::setprecision(6)
          << timestamp_ << "]";
 
   // Set up the ObstacleClusters:
   // Insert the Obstacles one by one
   for (const PerceptionObstacle& perception_obstacle :
        perception_obstacles.perception_obstacle()) {
-    ADEBUG << "Perception obstacle [" << perception_obstacle.id() << "] "
+    AINFO << "Perception obstacle [" << perception_obstacle.id() << "] "
            << "was detected";
     InsertPerceptionObstacle(perception_obstacle, timestamp_);
-    ADEBUG << "Perception obstacle [" << perception_obstacle.id() << "] "
+    AINFO << "Perception obstacle [" << perception_obstacle.id() << "] "
            << "was inserted";
   }
 
@@ -202,7 +203,7 @@ void ObstaclesContainer::SetConsideredObstacleIds() {
       continue;
     }
     if (obstacle_ptr->ToIgnore()) {
-      ADEBUG << "Ignore obstacle [" << obstacle_ptr->id() << "]";
+      AINFO << "Ignore obstacle [" << obstacle_ptr->id() << "]";
       continue;
     }
     curr_frame_considered_obstacle_ids_.push_back(id);
@@ -226,7 +227,7 @@ void ObstaclesContainer::InsertPerceptionObstacle(
     return;
   }
   if (!IsMovable(perception_obstacle)) {
-    ADEBUG << "Perception obstacle [" << perception_obstacle.id()
+    AERROR << "Perception obstacle [" << perception_obstacle.id()
            << "] is unmovable.";
     curr_frame_unmovable_obstacle_ids_.push_back(id);
     return;
@@ -235,11 +236,12 @@ void ObstaclesContainer::InsertPerceptionObstacle(
   // Insert the obstacle and also update the LRUCache.
   auto obstacle_ptr = GetObstacleWithLRUUpdate(id);
   if (obstacle_ptr != nullptr) {
-    ADEBUG << "Current time = " << std::fixed << std::setprecision(6)
+    AINFO << "Current time = " << std::fixed << std::setprecision(6)
            << timestamp;
     obstacle_ptr->Insert(perception_obstacle, timestamp, id);
-    ADEBUG << "Refresh obstacle [" << id << "]";
+    AINFO << "Refresh obstacle [" << id << "]";
   } else {
+    AINFO << "create Obstacle and Insert.";
     auto ptr_obstacle =
         Obstacle::Create(perception_obstacle, timestamp, id, clusters_.get());
     if (ptr_obstacle == nullptr) {
@@ -248,13 +250,14 @@ void ObstaclesContainer::InsertPerceptionObstacle(
     }
     ptr_obstacle->SetJunctionAnalyzer(&junction_analyzer_);
     ptr_obstacles_.Put(id, std::move(ptr_obstacle));
-    ADEBUG << "Insert obstacle [" << id << "]";
+    AINFO << "Insert obstacle [" << id << "]";
   }
 
   if (FLAGS_prediction_offline_mode ==
           PredictionConstants::kDumpDataForLearning ||
       id != FLAGS_ego_vehicle_id) {
     curr_frame_movable_obstacle_ids_.push_back(id);
+    AINFO << "insert into curr_frame_movable_obstacle_ids.";
   }
 }
 
@@ -289,12 +292,12 @@ void ObstaclesContainer::BuildLaneGraph() {
     }
     if (FLAGS_prediction_offline_mode !=
         PredictionConstants::kDumpDataForLearning) {
-      ADEBUG << "Building Lane Graph.";
+      AINFO << "Building Lane Graph.";
       obstacle_ptr->BuildLaneGraph();
       obstacle_ptr->BuildLaneGraphFromLeftToRight();
     } else {
-      ADEBUG << "Building ordered Lane Graph.";
-      ADEBUG << "Building lane graph for id = " << id;
+      AINFO << "Building ordered Lane Graph.";
+      AINFO << "Building lane graph for id = " << id;
       obstacle_ptr->BuildLaneGraphFromLeftToRight();
     }
     obstacle_ptr->SetNearbyObstacles();
@@ -305,7 +308,9 @@ void ObstaclesContainer::BuildLaneGraph() {
     AERROR << "Ego vehicle not inserted";
     return;
   }
+  AINFO << "Enter into ego BuildLaneGraph.";
   ego_vehicle_ptr->BuildLaneGraph();
+  AINFO << "Enter into ego SetNearbyObstacles.";
   ego_vehicle_ptr->SetNearbyObstacles();
 }
 
@@ -320,7 +325,7 @@ void ObstaclesContainer::BuildJunctionFeature() {
     }
     const std::string& junction_id = junction_analyzer_.GetJunctionId();
     if (obstacle_ptr->IsInJunction(junction_id)) {
-      ADEBUG << "Build junction feature for obstacle [" << obstacle_ptr->id()
+      AINFO << "Build junction feature for obstacle [" << obstacle_ptr->id()
              << "] in junction [" << junction_id << "]";
       obstacle_ptr->BuildJunctionFeature();
     }

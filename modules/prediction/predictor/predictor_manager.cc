@@ -134,9 +134,11 @@ void PredictorManager::Run(
   prediction_obstacles_.Clear();
 
   if (FLAGS_enable_multi_thread) {
+    AINFO << "Enter into PredictObstaclesInParallel.";
     PredictObstaclesInParallel(perception_obstacles, adc_trajectory_container,
                                obstacles_container);
   } else {
+    AINFO << "Enter into PredictObstacles.";
     PredictObstacles(perception_obstacles, adc_trajectory_container,
                      obstacles_container);
   }
@@ -150,7 +152,7 @@ void PredictorManager::PredictObstacles(
        perception_obstacles.perception_obstacle()) {
     int id = perception_obstacle.id();
     if (id < 0) {
-      ADEBUG << "The obstacle has invalid id [" << id << "].";
+      AERROR << "The obstacle has invalid id [" << id << "].";
       continue;
     }
 
@@ -237,14 +239,15 @@ void PredictorManager::PredictObstacle(
   prediction_obstacle->set_timestamp(obstacle->timestamp());
 
   if (obstacle->ToIgnore()) {
-    ADEBUG << "Ignore obstacle [" << obstacle->id() << "]";
+    AINFO << "Ignore obstacle [" << obstacle->id() << "]";
     RunEmptyPredictor(adc_trajectory_container, obstacle, obstacles_container);
     prediction_obstacle->mutable_priority()->set_priority(
         ObstaclePriority::IGNORE);
   } else if (obstacle->IsStill()) {
-    ADEBUG << "Still obstacle [" << obstacle->id() << "]";
+    AINFO << "Still obstacle [" << obstacle->id() << "]";
     RunEmptyPredictor(adc_trajectory_container, obstacle, obstacles_container);
   } else {
+    AINFO << "PredictObstacle obstacle->type(): " << obstacle->type();
     switch (obstacle->type()) {
       case PerceptionObstacle::VEHICLE: {
         RunVehiclePredictor(adc_trajectory_container, obstacle,
@@ -394,6 +397,7 @@ void PredictorManager::RunVehiclePredictor(
     const ADCTrajectoryContainer* adc_trajectory_container, Obstacle* obstacle,
     ObstaclesContainer* obstacles_container) {
   Predictor* predictor = nullptr;
+  // predictor_type: EXTRAPOLATION_PREDICTOR
   if (obstacle->IsCaution()) {
     if (obstacle->IsNearJunction()) {
       predictor = GetPredictor(vehicle_in_junction_caution_predictor_);
@@ -413,11 +417,14 @@ void PredictorManager::RunVehiclePredictor(
   }
 
   if (!obstacle->IsOnLane()) {
+    //predictor_type: FREE_MOVE_PREDICTOR
     predictor = GetPredictor(vehicle_off_lane_predictor_);
   } else if (obstacle->HasJunctionFeatureWithExits() &&
              !obstacle->IsCloseToJunctionExit()) {
+    // predictor_type: LANE_SEQUENCE_PREDICTOR
     predictor = GetPredictor(vehicle_in_junction_predictor_);
   } else {
+    // predictor_type: MOVE_SEQUENCE_PREDICTOR
     predictor = GetPredictor(vehicle_on_lane_predictor_);
   }
 
@@ -441,6 +448,7 @@ void PredictorManager::RunPedestrianPredictor(
     AERROR << "Nullptr found for obstacle [" << obstacle->id() << "]";
     return;
   }
+  // predictor_type: FREE_MOVE_PREDICTOR
   predictor->Predict(adc_trajectory_container, obstacle, obstacles_container);
 }
 
@@ -449,8 +457,10 @@ void PredictorManager::RunCyclistPredictor(
     ObstaclesContainer* obstacles_container) {
   Predictor* predictor = nullptr;
   if (obstacle->IsOnLane()) {
+    // predictor_type: LANE_SEQUENCE_PREDICTOR
     predictor = GetPredictor(cyclist_on_lane_predictor_);
   } else {
+    // predictor_type: FREE_MOVE_PREDICTOR
     predictor = GetPredictor(cyclist_off_lane_predictor_);
   }
   if (predictor == nullptr) {
@@ -465,8 +475,10 @@ void PredictorManager::RunDefaultPredictor(
     ObstaclesContainer* obstacles_container) {
   Predictor* predictor = nullptr;
   if (obstacle->IsOnLane()) {
+    // predictor_type: LANE_SEQUENCE_PREDICTOR
     predictor = GetPredictor(default_on_lane_predictor_);
   } else {
+    // predictor_type: FREE_MOVE_PREDICTOR
     predictor = GetPredictor(default_off_lane_predictor_);
   }
   if (predictor == nullptr) {

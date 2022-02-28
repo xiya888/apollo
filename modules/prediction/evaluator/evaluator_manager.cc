@@ -66,17 +66,17 @@ void GroupObstaclesByObstacleIds(ObstaclesContainer* const obstacles_container,
       continue;
     }
     if (obstacle_ptr->IsStill()) {
-      ADEBUG << "Ignore still obstacle [" << obstacle_id << "]";
+      AERROR << "Ignore still obstacle [" << obstacle_id << "]";
       continue;
     }
     const Feature& feature = obstacle_ptr->latest_feature();
     if (feature.priority().priority() == ObstaclePriority::IGNORE) {
-      ADEBUG << "Skip ignored obstacle [" << obstacle_id << "]";
+      AERROR << "Skip ignored obstacle [" << obstacle_id << "]";
       continue;
     } else if (feature.priority().priority() == ObstaclePriority::CAUTION) {
       caution_thread_idx = caution_thread_idx % FLAGS_max_caution_thread_num;
       (*id_obstacle_map)[caution_thread_idx].push_back(obstacle_ptr);
-      ADEBUG << "Cautioned obstacle [" << obstacle_id << "] for thread"
+      AINFO << "Cautioned obstacle [" << obstacle_id << "] for thread"
              << caution_thread_idx;
       ++caution_thread_idx;
     } else {
@@ -85,7 +85,7 @@ void GroupObstaclesByObstacleIds(ObstaclesContainer* const obstacles_container,
       int id_mod =
           obstacle_id % normal_thread_num + FLAGS_max_caution_thread_num;
       (*id_obstacle_map)[id_mod].push_back(obstacle_ptr);
-      ADEBUG << "Normal obstacle [" << obstacle_id << "] for thread" << id_mod;
+      AINFO << "Normal obstacle [" << obstacle_id << "] for thread" << id_mod;
     }
   }
 }
@@ -110,7 +110,7 @@ void EvaluatorManager::Init(const PredictionConf& config) {
   if (FLAGS_enable_semantic_map) {
     semantic_map_.reset(new SemanticMap());
     semantic_map_->Init();
-    ADEBUG << "Init SemanticMap instance.";
+    AINFO << "Init SemanticMap instance.";
   }
 
   RegisterEvaluators();
@@ -123,7 +123,7 @@ void EvaluatorManager::Init(const PredictionConf& config) {
     }
 
     if (!obstacle_conf.has_evaluator_type()) {
-      ADEBUG << "Obstacle config [" << obstacle_conf.ShortDebugString()
+      AERROR << "Obstacle config [" << obstacle_conf.ShortDebugString()
              << "] has not defined evaluator type.";
       continue;
     }
@@ -202,12 +202,14 @@ void EvaluatorManager::Run(ObstaclesContainer* obstacles_container) {
     if (FLAGS_prediction_offline_mode == PredictionConstants::kDumpFrameEnv) {
       return;
     }
+    // Draw all obstacles_history, but need to open the settings.
     semantic_map_->RunCurrFrame(obstacle_id_history_map_);
   }
 
   std::vector<Obstacle*> dynamic_env;
 
   if (FLAGS_enable_multi_thread) {
+    AINFO << "FLAGS_enable_multi_thread: " << FLAGS_enable_multi_thread;
     IdObstacleListMap id_obstacle_map;
     GroupObstaclesByObstacleIds(obstacles_container, &id_obstacle_map);
     PredictionThreadPool::ForEach(
@@ -225,10 +227,10 @@ void EvaluatorManager::Run(ObstaclesContainer* obstacles_container) {
         continue;
       }
       if (obstacle->IsStill()) {
-        ADEBUG << "Ignore still obstacle [" << id << "] in evaluator_manager";
+        AINFO << "Ignore still obstacle [" << id << "] in evaluator_manager";
         continue;
       }
-
+      AINFO << "Unenable_multi_thread EvaluateObstacle start.";
       EvaluateObstacle(obstacle, obstacles_container, dynamic_env);
     }
   }
@@ -239,9 +241,13 @@ void EvaluatorManager::EvaluateObstacle(Obstacle* obstacle,
                                         std::vector<Obstacle*> dynamic_env) {
   Evaluator* evaluator = nullptr;
   // Select different evaluators depending on the obstacle's type.
+  AINFO << "EvaluateObstacle obstacle->type(): " << obstacle->type();
   switch (obstacle->type()) {
     case PerceptionObstacle::VEHICLE: {
       if (obstacle->IsCaution() && !obstacle->IsSlow()) {
+        AINFO << "VEHICLE evaluator: SEMANTIC_LSTM_EVALUATOR.";
+        // priority_type: CAUTION
+        // evaluator_type: SEMANTIC_LSTM_EVALUATOR
         if (obstacle->IsNearJunction()) {
           evaluator = GetEvaluator(vehicle_in_junction_caution_evaluator_);
         } else if (obstacle->IsOnLane()) {
@@ -259,13 +265,16 @@ void EvaluatorManager::EvaluateObstacle(Obstacle* obstacle,
         }
       }
       // if obstacle is not caution or caution_evaluator run failed
+      // priority_type: NORMAL
+      // evaluator_type: CRUISE_MLP_EVALUATOR
+      // evaluator_type: JUNCTION_MLP_EVALUATOR
       if (obstacle->HasJunctionFeatureWithExits() &&
           !obstacle->IsCloseToJunctionExit()) {
         evaluator = GetEvaluator(vehicle_in_junction_evaluator_);
       } else if (obstacle->IsOnLane()) {
         evaluator = GetEvaluator(vehicle_on_lane_evaluator_);
       } else {
-        ADEBUG << "Obstacle: " << obstacle->id()
+        AINFO << "Obstacle: " << obstacle->id()
                << " is neither on lane, nor in junction. Skip evaluating.";
         break;
       }
@@ -275,9 +284,11 @@ void EvaluatorManager::EvaluateObstacle(Obstacle* obstacle,
       } else {
         evaluator->Evaluate(obstacle, obstacles_container);
       }
+      AINFO << "VEHICLE evaluator: CRUISE_MLP_EVALUATOR.";
       break;
     }
     case PerceptionObstacle::BICYCLE: {
+      // evaluator_type: CYCLIST_KEEP_LANE_EVALUATOR
       if (obstacle->IsOnLane()) {
         evaluator = GetEvaluator(cyclist_on_lane_evaluator_);
         CHECK_NOTNULL(evaluator);
@@ -286,6 +297,7 @@ void EvaluatorManager::EvaluateObstacle(Obstacle* obstacle,
       break;
     }
     case PerceptionObstacle::PEDESTRIAN: {
+      // no started. ??
       if (FLAGS_prediction_offline_mode ==
               PredictionConstants::kDumpDataForLearning ||
           obstacle->latest_feature().priority().priority() ==
@@ -297,6 +309,7 @@ void EvaluatorManager::EvaluateObstacle(Obstacle* obstacle,
       }
     }
     default: {
+      // evaluator_type: MLP_EVALUATOR
       if (obstacle->IsOnLane()) {
         evaluator = GetEvaluator(default_on_lane_evaluator_);
         CHECK_NOTNULL(evaluator);

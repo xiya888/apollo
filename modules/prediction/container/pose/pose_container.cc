@@ -75,6 +75,7 @@ void PoseContainer::Update(
     double qz = localization.pose().orientation().qz();
     theta = common::math::QuaternionToHeading(qw, qx, qy, qz);
   }
+  AINFO << "theta: " << theta;
   obstacle_ptr_->set_theta(theta);
 
   Point velocity;
@@ -86,7 +87,7 @@ void PoseContainer::Update(
   obstacle_ptr_->set_type(type_);
   obstacle_ptr_->set_timestamp(localization.header().timestamp_sec());
 
-  ADEBUG << "ADC obstacle [" << obstacle_ptr_->ShortDebugString() << "].";
+  AINFO << "localization. ADC obstacle [" << obstacle_ptr_->ShortDebugString() << "].";
 }
 
 double PoseContainer::GetTimestamp() {

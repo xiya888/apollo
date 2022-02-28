@@ -56,7 +56,7 @@ bool SemanticLSTMEvaluator::Evaluate(Obstacle* obstacle_ptr,
   CHECK_NOTNULL(latest_feature_ptr);
 
   if (!FLAGS_enable_semantic_map) {
-    ADEBUG << "Not enable semantic map, exit semantic_lstm_evaluator.";
+    AERROR << "Not enable semantic map, exit semantic_lstm_evaluator.";
     return false;
   }
   cv::Mat feature_map;
@@ -76,7 +76,7 @@ bool SemanticLSTMEvaluator::Evaluate(Obstacle* obstacle_ptr,
   // Extract features of pos_history
   std::vector<std::pair<double, double>> pos_history(20, {0.0, 0.0});
   if (!ExtractObstacleHistory(obstacle_ptr, &pos_history)) {
-    ADEBUG << "Obstacle [" << id << "] failed to extract obstacle history";
+    AERROR << "Obstacle [" << id << "] failed to extract obstacle history";
     return false;
   }
   // Process obstacle_history
@@ -118,7 +118,7 @@ bool SemanticLSTMEvaluator::Evaluate(Obstacle* obstacle_ptr,
 
   auto end_time = std::chrono::system_clock::now();
   std::chrono::duration<double> diff = end_time - start_time;
-  ADEBUG << "Semantic_LSTM_evaluator used time: " << diff.count() * 1000
+  AINFO << "Semantic_LSTM_evaluator used time: " << diff.count() * 1000
          << " ms.";
   auto torch_output = torch_output_tensor.accessor<float, 3>();
 
@@ -212,7 +212,7 @@ bool SemanticLSTMEvaluator::Evaluate(Obstacle* obstacle_ptr,
                    FLAGS_prediction_trajectory_time_resolution);
     }
   }
-
+  AINFO << "SemanticLSTMEvaluator::Evaluate End.";
   return true;
 }
 

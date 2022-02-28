@@ -81,7 +81,7 @@ bool JunctionMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
   // Assume obstacle is NOT closed to any junction exit
   if (!latest_feature_ptr->has_junction_feature() ||
       latest_feature_ptr->junction_feature().junction_exit_size() < 1) {
-    ADEBUG << "Obstacle [" << id << "] has no junction_exit.";
+    AERROR << "Obstacle [" << id << "] has no junction_exit.";
     return false;
   }
 
@@ -93,7 +93,7 @@ bool JunctionMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
       PredictionConstants::kDumpDataForLearning) {
     FeatureOutput::InsertDataForLearning(*latest_feature_ptr, feature_values,
                                          "junction", nullptr);
-    ADEBUG << "Save extracted features for learning locally.";
+    AERROR << "Save extracted features for learning locally.";
     return true;  // Skip Compute probability for offline mode
   }
   std::vector<torch::jit::IValue> torch_inputs;
@@ -157,6 +157,7 @@ bool JunctionMLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
       }
     }
   }
+  AINFO << "JunctionMLPEvaluator::Evaluate End.";
   return true;
 }
 

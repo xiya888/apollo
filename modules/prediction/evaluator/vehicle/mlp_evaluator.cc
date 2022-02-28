@@ -69,7 +69,7 @@ bool MLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
   CHECK_NOTNULL(latest_feature_ptr);
   if (!latest_feature_ptr->has_lane() ||
       !latest_feature_ptr->lane().has_lane_graph()) {
-    ADEBUG << "Obstacle [" << id << "] has no lane graph.";
+    AERROR << "Obstacle [" << id << "] has no lane graph.";
     return false;
   }
 
@@ -86,7 +86,7 @@ bool MLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
   std::vector<double> obstacle_feature_values;
   SetObstacleFeatureValues(obstacle_ptr, &obstacle_feature_values);
   if (obstacle_feature_values.size() != OBSTACLE_FEATURE_SIZE) {
-    ADEBUG << "Obstacle [" << id << "] has fewer than "
+    AERROR << "Obstacle [" << id << "] has fewer than "
            << "expected obstacle feature_values "
            << obstacle_feature_values.size() << ".";
     return false;
@@ -98,7 +98,7 @@ bool MLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
     std::vector<double> lane_feature_values;
     SetLaneFeatureValues(obstacle_ptr, lane_sequence_ptr, &lane_feature_values);
     if (lane_feature_values.size() != LANE_FEATURE_SIZE) {
-      ADEBUG << "Obstacle [" << id << "] has fewer than "
+      AERROR << "Obstacle [" << id << "] has fewer than "
              << "expected lane feature_values" << lane_feature_values.size()
              << ".";
       continue;
@@ -116,7 +116,7 @@ bool MLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
         !obstacle_ptr->IsNearJunction()) {
       FeatureOutput::InsertDataForLearning(*latest_feature_ptr, feature_values,
                                            "mlp", lane_sequence_ptr);
-      ADEBUG << "Save extracted features for learning locally.";
+      AERROR << "Save extracted features for learning locally.";
       return true;  // Skip Compute probability for offline mode
     }
     double probability = ComputeProbability(feature_values);
@@ -127,6 +127,7 @@ bool MLPEvaluator::Evaluate(Obstacle* obstacle_ptr,
     probability *= centripetal_acc_probability;
     lane_sequence_ptr->set_probability(probability);
   }
+  AINFO << "MLPEvaluator::Evaluate End.";
   return true;
 }
 

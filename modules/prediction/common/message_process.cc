@@ -97,7 +97,7 @@ void MessageProcess::ContainerProcess(
     const std::shared_ptr<ContainerManager>& container_manager,
     const perception::PerceptionObstacles& perception_obstacles,
     ScenarioManager* scenario_manager) {
-  ADEBUG << "Received a perception message ["
+  AINFO << "Received a perception message ["
          << perception_obstacles.ShortDebugString() << "].";
 
   // Get obstacles_container
@@ -128,12 +128,13 @@ void MessageProcess::ContainerProcess(
   const PerceptionObstacle* ptr_ego_vehicle =
       ptr_ego_pose_container->ToPerceptionObstacle();
   if (ptr_ego_vehicle != nullptr) {
+    AINFO << "ptr_ego_vehicle is not nullptr.";
     double perception_obs_timestamp = ptr_ego_vehicle->timestamp();
     if (perception_obstacles.has_header() &&
         perception_obstacles.header().has_timestamp_sec()) {
-      ADEBUG << "Correcting " << std::fixed << std::setprecision(6)
-             << ptr_ego_vehicle->timestamp() << " to " << std::fixed
-             << std::setprecision(6)
+      AINFO << "Correcting (ego_vehicle)" << std::fixed << std::setprecision(6)
+             << ptr_ego_vehicle->timestamp() << " to (obstacle_vehicle)" 
+             << std::fixed << std::setprecision(6)
              << perception_obstacles.header().timestamp_sec();
       perception_obs_timestamp = perception_obstacles.header().timestamp_sec();
     }
@@ -141,7 +142,7 @@ void MessageProcess::ContainerProcess(
                                                       perception_obs_timestamp);
     double x = ptr_ego_vehicle->position().x();
     double y = ptr_ego_vehicle->position().y();
-    ADEBUG << "Get ADC position [" << std::fixed << std::setprecision(6) << x
+    AINFO << "Get ADC position [" << std::fixed << std::setprecision(6) << x
            << ", " << std::fixed << std::setprecision(6) << y << "].";
     ptr_ego_trajectory_container->SetPosition({x, y});
   }
@@ -180,8 +181,11 @@ void MessageProcess::OnPerception(
     EvaluatorManager* evaluator_manager, PredictorManager* predictor_manager,
     ScenarioManager* scenario_manager,
     PredictionObstacles* const prediction_obstacles) {
+  // enter into the process flow.
   ContainerProcess(container_manager, perception_obstacles, scenario_manager);
 
+  // Declare a pointer to the corresponding container, including perception and 
+  // planning.
   auto ptr_obstacles_container =
       container_manager->GetContainer<ObstaclesContainer>(
           AdapterConfig::PERCEPTION_OBSTACLES);
@@ -212,7 +216,7 @@ void MessageProcess::OnPerception(
           ptr_ego_trajectory_container->adc_trajectory().trajectory_point();
       */
       FeatureOutput::InsertFeatureProto(obstacle_ptr->latest_feature());
-      ADEBUG << "Insert feature into feature output";
+      AINFO << "Insert feature into feature output";
     }
     // Not doing evaluation on offline mode
     return;
@@ -273,7 +277,7 @@ void MessageProcess::OnStoryTelling(ContainerManager* container_manager,
   CHECK_NOTNULL(ptr_storytelling_container);
   ptr_storytelling_container->Insert(story);
 
-  ADEBUG << "Received a storytelling message [" << story.ShortDebugString()
+  AINFO << "Received a storytelling message [" << story.ShortDebugString()
          << "].";
 }
 

@@ -179,7 +179,7 @@ bool PredictionComponent::PredictionEndToEndProc(
   if (FLAGS_prediction_test_mode &&
       (Clock::NowInSeconds() - component_start_time_ >
        FLAGS_prediction_test_duration)) {
-    ADEBUG << "Prediction finished running in test mode";
+    AINFO << "Prediction finished running in test mode";
   }
 
   // Update relative map if needed
@@ -203,7 +203,7 @@ bool PredictionComponent::PredictionEndToEndProc(
                                  *ptr_localization_msg);
   auto end_time2 = std::chrono::system_clock::now();
   std::chrono::duration<double> diff = end_time2 - end_time1;
-  ADEBUG << "Time for updating PoseContainer: " << diff.count() * 1000
+  AINFO << "Time for updating PoseContainer: " << diff.count() * 1000
          << " msec.";
 
   // Read storytelling message and call OnStorytelling to update the
@@ -224,7 +224,7 @@ bool PredictionComponent::PredictionEndToEndProc(
   }
   auto end_time3 = std::chrono::system_clock::now();
   diff = end_time3 - end_time2;
-  ADEBUG << "Time for updating ADCTrajectoryContainer: " << diff.count() * 1000
+  AINFO << "Time for updating ADCTrajectoryContainer: " << diff.count() * 1000
          << " msec.";
 
   // Get all perception_obstacles of this frame and call OnPerception to
@@ -236,7 +236,7 @@ bool PredictionComponent::PredictionEndToEndProc(
       predictor_manager_.get(), scenario_manager_.get(), &prediction_obstacles);
   auto end_time4 = std::chrono::system_clock::now();
   diff = end_time4 - end_time3;
-  ADEBUG << "Time for updating PerceptionContainer: " << diff.count() * 1000
+  AINFO << "Time for updating PerceptionContainer: " << diff.count() * 1000
          << " msec.";
 
   // Postprocess prediction obstacles message
@@ -268,7 +268,7 @@ bool PredictionComponent::PredictionEndToEndProc(
 
   auto end_time5 = std::chrono::system_clock::now();
   diff = end_time5 - end_time1;
-  ADEBUG << "End to end time elapsed: " << diff.count() * 1000 << " msec.";
+  AINFO << "End to end time elapsed: " << diff.count() * 1000 << " msec.";
 
   // Publish output
   common::util::FillHeader(node_->Name(), &prediction_obstacles);

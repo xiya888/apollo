@@ -112,7 +112,7 @@ void ObstaclesPrioritizer::AssignIgnoreLevel() {
   double ego_theta = ego_feature.theta();
   double ego_x = ego_feature.position().x();
   double ego_y = ego_feature.position().y();
-  ADEBUG << "Get pose (" << ego_x << ", " << ego_y << ", " << ego_theta << ")";
+  AINFO << "Get pose (" << ego_x << ", " << ego_y << ", " << ego_theta << ")";
 
   // Build rectangular scan_area
   Box2d scan_box({ego_x + FLAGS_scan_length / 2.0 * std::cos(ego_theta),

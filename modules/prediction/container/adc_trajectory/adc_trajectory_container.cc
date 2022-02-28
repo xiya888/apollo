@@ -46,12 +46,12 @@ void ADCTrajectoryContainer::Insert(
 
   // Find ADC lane sequence
   SetLaneSequence();
-  ADEBUG << "Generate an ADC lane id sequence [" << ToString(adc_lane_seq_)
+  AINFO << "Generate an ADC lane id sequence [" << ToString(adc_lane_seq_)
          << "].";
 
   // Find ADC target lane sequence
   SetTargetLaneSequence();
-  ADEBUG << "Generate an ADC target lane id sequence ["
+  AINFO << "Generate an ADC target lane id sequence ["
          << ToString(adc_target_lane_seq_) << "].";
 }
 
@@ -233,7 +233,7 @@ void ADCTrajectoryContainer::SetPosition(const Vec2d& position) {
       break;
     }
   }
-  ADEBUG << "Generate an ADC lane ids [" << ToString(adc_lane_ids_) << "].";
+  AINFO << "Generate an ADC lane ids [" << ToString(adc_lane_ids_) << "].";
 }
 
 const std::vector<std::string>& ADCTrajectoryContainer::GetADCLaneIDSequence()

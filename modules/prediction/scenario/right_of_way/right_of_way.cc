@@ -125,7 +125,7 @@ void RightOfWay::Analyze(ContainerManager* container_manager) {
     if (latest_feature_ptr->type() != PerceptionObstacle::VEHICLE) {
       continue;
     }
-    ADEBUG << "RightOfWay for obstacle [" << latest_feature_ptr->id() << "], "
+    AINFO << "RightOfWay for obstacle [" << latest_feature_ptr->id() << "], "
            << "with lane_sequence_size: "
            << latest_feature_ptr->lane().lane_graph().lane_sequence_size();
     for (auto& lane_sequence : *latest_feature_ptr->mutable_lane()
